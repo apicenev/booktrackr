@@ -7,7 +7,6 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { actionItemConverter } from "../lib/converters/ActionItemConverter";

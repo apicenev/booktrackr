@@ -7,7 +7,6 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { readingSessionConverter } from "../lib/converters/ReadingSessionConverter";

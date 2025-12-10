@@ -7,77 +7,107 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where,
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { bookConverter } from "../lib/converters/BookConverter";
-import { type Book } from "../types/Book";
-import { v4 as uuidv4 } from "uuid";
+import type { Book, NewBookInput } from "../types/Book";
 
 const booksCollection = (userId: string) =>
   collection(db, "users", userId, "books").withConverter(bookConverter);
 
-export const getBooks = async (userId: string): Promise<Book[]> => {
+export async function getBooks(userId: string): Promise<Book[]> {
   const q = query(booksCollection(userId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => doc.data());
-};
+}
 
-export const getBook = async (
+export async function getBook(
   userId: string,
   bookId: string
-): Promise<Book | null> => {
+): Promise<Book | null> {
   const docRef = doc(booksCollection(userId), bookId);
   const snapshot = await getDoc(docRef);
   return snapshot.exists() ? snapshot.data() : null;
-};
+}
 
-export const createBook = async (
+export async function createBook(
   userId: string,
-  payload: Omit<Book, "id" | "createdAt" | "updatedAt">
-): Promise<void> => {
-  await addDoc(booksCollection(userId), {
-    id: uuidv4(),
-    ...payload,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
-};
+  input: NewBookInput
+): Promise<string> {
+  const now = new Date();
 
-export const updateBook = async (
+  const docRef = await addDoc(booksCollection(userId), {
+    ...input,
+    status: input.status ?? "to-read",
+    createdAt: now,
+    updatedAt: now,
+    id: ""
+  });
+
+  return docRef.id;
+}
+
+export async function updateBook(
   userId: string,
   bookId: string,
-  partial: Partial<Book>
-): Promise<void> => {
+  partial: Partial<Omit<Book, "id" | "createdAt">>
+): Promise<void> {
   const docRef = doc(booksCollection(userId), bookId);
+
   await updateDoc(docRef, {
     ...partial,
     updatedAt: new Date(),
   });
-};
+}
 
-export const deleteBook = async (
+export async function deleteBook(
   userId: string,
   bookId: string
-): Promise<void> => {
+): Promise<void> {
   const docRef = doc(booksCollection(userId), bookId);
   await deleteDoc(docRef);
-};
+}
 
-export const listenToBooks = (userId: string, callback: (books: any[]) => void) => {
-  const booksRef = collection(db, "users", userId, "books");
-  return onSnapshot(booksRef, (snapshot) => {
-    const books = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+export function listenToBooks(
+  userId: string,
+  callback: (books: Book[]) => void
+) {
+  return onSnapshot(booksCollection(userId), (snapshot) => {
+    const books = snapshot.docs.map((doc) => doc.data());
     callback(books);
   });
-};
+}
 
-export const cascadeDeleteBook = async (userId: string, bookId: string) => {
+/**
+ * Deletes a book and all related subcollections:
+ * - notes
+ * - actionItems
+ * - readingSessions
+ */
+export async function cascadeDeleteBook(
+  userId: string,
+  bookId: string
+): Promise<void> {
   const notesRef = collection(db, "users", userId, "books", bookId, "notes");
-  const actionItemsRef = collection(db, "users", userId, "books", bookId, "actionItems");
+  const actionItemsRef = collection(
+    db,
+    "users",
+    userId,
+    "books",
+    bookId,
+    "actionItems"
+  );
+  const readingSessionsRef = collection(
+    db,
+    "users",
+    userId,
+    "books",
+    bookId,
+    "readingSessions"
+  );
 
-  const deleteCollection = async (ref: any) => {
+  const deleteCollection = async (ref: typeof notesRef) => {
     const snapshot = await getDocs(ref);
     const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
     await Promise.all(deletePromises);
@@ -85,5 +115,6 @@ export const cascadeDeleteBook = async (userId: string, bookId: string) => {
 
   await deleteCollection(notesRef);
   await deleteCollection(actionItemsRef);
+  await deleteCollection(readingSessionsRef);
   await deleteDoc(doc(db, "users", userId, "books", bookId));
-};
+}

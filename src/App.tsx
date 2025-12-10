@@ -1,4 +1,3 @@
-import './App.css';
 import AppRouter from "./router/AppRouter";
 import { BrowserRouter } from "react-router-dom";
 import { useAuth } from "./lib/hooks/useAuth";

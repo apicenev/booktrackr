@@ -26,7 +26,7 @@ export default function AppRouter() {
       </Route>
 
       {/* Default redirect */}
-      <Route path="*" element={<Navigate to="/dashboard" />} />
+      <Route path="/" element={<Navigate to="/dashboard" />} />
     </Routes>
   );
 }

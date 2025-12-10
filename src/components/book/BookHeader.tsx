@@ -1,4 +1,4 @@
-const BookHeader = ({ book, onDelete }: { book: any; onDelete: () => void }) => {
+const BookHeader = ({ book }: { book: any; onDelete: () => void }) => {
   return (
     <div>
       {/* Placeholder for BookHeader */}

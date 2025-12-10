@@ -1,4 +1,4 @@
-const ProgressEditor = ({ book, onUpdate }: { book: any; onUpdate: (data: any) => void }) => {
+const ProgressEditor = ({ book }: { book: any; onUpdate: (data: any) => void }) => {
   return (
     <div>
       {/* Placeholder for ProgressEditor */}

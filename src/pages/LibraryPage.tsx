@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { listenToBooks } from "../services/bookService";
-import BookList from "../components/library/BookList.tsx";
-import BookStatusFilter from "../components/library/BookStatusFilter.tsx";
-import AddBookForm from "../components/library/AddBookForm";
 import { useAuth } from "../lib/hooks/useAuth";
 
 type Book = {
