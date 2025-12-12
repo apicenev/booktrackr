@@ -9,6 +9,7 @@ import BookDetailPage from "../pages/BookDetailPage";
 import WishlistPage from "../pages/WishlistPage.tsx";
 
 import AppLayout from "../components/layout/AppLayout";
+import AddBookPage from "../pages/AddBookPage.tsx";
 
 export default function AppRouter() {
   return (
@@ -21,6 +22,7 @@ export default function AppRouter() {
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/library" element={<LibraryPage />} />
+        <Route path="/library/new" element={<AddBookPage />} />
         <Route path="/books/:id" element={<BookDetailPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
       </Route>
