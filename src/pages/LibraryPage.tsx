@@ -341,11 +341,19 @@ export default function LibraryPage() {
               <div className="flex gap-4">
                 {/* Cover thumbnail */}
                 <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-800 bg-gradient-to-br from-indigo-500/30 to-indigo-600/10">
-                  <div className="grid h-full w-full place-items-center">
-                    <span className="text-lg font-semibold text-indigo-100/90">
-                      {book.title.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                  {book.coverId ? (
+                    <img
+                      src={`https://covers.openlibrary.org/b/id/${book.coverId}-M.jpg`}
+                      alt={book.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center">
+                      <span className="text-lg font-semibold text-indigo-100/90">
+                        {book.title.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="min-w-0 flex-1">

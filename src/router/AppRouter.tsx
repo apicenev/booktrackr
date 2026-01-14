@@ -7,6 +7,7 @@ import DashboardPage from "../pages/DashboardPage";
 import LibraryPage from "../pages/LibraryPage";
 import BookDetailPage from "../pages/BookDetailPage";
 import WishlistPage from "../pages/WishlistPage.tsx";
+import ExplorePage from "../pages/ExplorePage";
 
 import AppLayout from "../components/layout/AppLayout";
 import AddBookPage from "../pages/AddBookPage.tsx";
@@ -25,6 +26,7 @@ export default function AppRouter() {
         <Route path="/library/new" element={<AddBookPage />} />
         <Route path="/books/:id" element={<BookDetailPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/explore" element={<ExplorePage />} />
       </Route>
 
       {/* Default redirect */}

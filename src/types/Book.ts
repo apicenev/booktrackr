@@ -10,6 +10,7 @@ export interface Book {
   tags?: string[];
   createdAt: Date;
   updatedAt: Date;
+  coverId?: number; // Optional field for Open Library cover image ID
 }
 
 export interface NewBookInput {

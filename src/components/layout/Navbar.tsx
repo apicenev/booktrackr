@@ -27,6 +27,10 @@ const Navbar = () => {
             Wishlist
           </NavLink>
 
+          <NavLink to="/explore" className={navLinkClass}>
+            Explore
+          </NavLink>
+
           <span className="text-xs text-slate-400">{user?.email}</span>
           <button onClick={logout} className="text-sm bg-indigo-600 px-3 py-1 rounded-lg hover:bg-indigo-500 transition">Logout</button>
         </div>

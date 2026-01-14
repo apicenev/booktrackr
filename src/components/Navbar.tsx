@@ -18,6 +18,7 @@ const Navbar = () => {
           <Link to="/dashboard" className="text-slate-200 hover:text-sky-300">Dashboard</Link>
           <Link to="/library" className="text-slate-200 hover:text-sky-300">Library</Link>
           <Link to="/wishlist" className="text-slate-200 hover:text-sky-300">Wishlist</Link>
+          <Link to="/explore" className="text-slate-200 hover:text-sky-300">Explore</Link>
           <span className="text-slate-400 text-sm">{user?.email}</span>
           <button
             onClick={handleLogout}

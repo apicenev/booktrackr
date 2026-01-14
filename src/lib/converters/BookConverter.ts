@@ -16,6 +16,7 @@ export const bookConverter: FirestoreDataConverter<Book> = {
       tags: book.tags ?? [],
       createdAt: Timestamp.fromDate(book.createdAt),
       updatedAt: Timestamp.fromDate(book.updatedAt),
+      coverId: book.coverId ?? null, // Ensure coverId is saved
     };
   },
   fromFirestore(
@@ -33,6 +34,7 @@ export const bookConverter: FirestoreDataConverter<Book> = {
       tags: data.tags ?? [],
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
+      coverId: data.coverId ?? undefined, // Ensure coverId is retrieved
     };
   },
 };

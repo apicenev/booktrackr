@@ -118,3 +118,37 @@ export async function cascadeDeleteBook(
   await deleteCollection(readingSessionsRef);
   await deleteDoc(doc(db, "users", userId, "books", bookId));
 }
+
+const addBookToLibrary = async (
+  userId: string,
+  book: { key: string; title: string; author_name?: string[]; cover_i?: number }
+): Promise<void> => {
+  const now = new Date();
+
+  const docRef = await addDoc(booksCollection(userId), {
+    title: book.title,
+    author: book.author_name?.join(", ") || "Unknown",
+    status: "to-read",
+    totalPages: undefined,
+    pagesRead: undefined,
+    tags: [],
+    createdAt: now,
+    updatedAt: now,
+    id: "",
+    coverId: book.cover_i || undefined, // Save cover image ID
+  });
+
+  // Update the document with its generated ID
+  await updateDoc(docRef, { id: docRef.id });
+};
+
+export default {
+  getBooks,
+  getBook,
+  createBook,
+  updateBook,
+  deleteBook,
+  listenToBooks,
+  cascadeDeleteBook,
+  addBookToLibrary,
+};
