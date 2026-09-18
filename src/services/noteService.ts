@@ -7,9 +7,11 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { noteConverter } from "../lib/converters/NoteConverter";
+import { toUpdateData } from "../lib/firestoreUtils";
 import type { Note, NewNoteInput } from "../types/Note";
 
 const notesCollection = (userId: string, bookId: string) =>
@@ -36,6 +38,19 @@ export async function getNote(
   return snapshot.exists() ? snapshot.data() : null;
 }
 
+export function listenToNotes(
+  userId: string,
+  bookId: string,
+  callback: (notes: Note[]) => void,
+  onError?: (error: Error) => void
+) {
+  return onSnapshot(
+    notesCollection(userId, bookId),
+    (snapshot) => callback(snapshot.docs.map((doc) => doc.data())),
+    onError
+  );
+}
+
 export async function createNote(
   userId: string,
   bookId: string,
@@ -48,9 +63,11 @@ export async function createNote(
     title: input.title,
     content: input.content,
     tags: input.tags ?? [],
+    isKeyInsight: input.isKeyInsight ?? false,
+    linkedBookIds: input.linkedBookIds ?? [],
     createdAt: now,
     updatedAt: now,
-    id: ""
+    id: "", // ignored by the converter; Firestore assigns the id
   });
 
   return docRef.id;
@@ -64,7 +81,7 @@ export async function updateNote(
 ): Promise<void> {
   const docRef = doc(notesCollection(userId, bookId), noteId);
   await updateDoc(docRef, {
-    ...partial,
+    ...toUpdateData(partial),
     updatedAt: new Date(),
   });
 }

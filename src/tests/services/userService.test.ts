@@ -34,7 +34,12 @@ vi.mock("firebase/firestore", () => {
   };
 });
 
-import { createUserProfile, getUserProfile } from "../../services/userService";
+import {
+  createUserProfile,
+  ensureUserProfile,
+  getUserProfile,
+  setYearlyGoal,
+} from "../../services/userService";
 
 describe("userService", () => {
   beforeEach(() => {
@@ -126,6 +131,45 @@ describe("userService", () => {
           photoURL: "x",
         })
       ).rejects.toThrow("write failed");
+    });
+  });
+
+  describe("ensureUserProfile", () => {
+    it("creates the profile on first sign-in", async () => {
+      firestoreMocks.getDoc.mockResolvedValue({ exists: () => false });
+
+      await ensureUserProfile("u1", "a@b.com");
+
+      expect(firestoreMocks.setDoc).toHaveBeenCalledTimes(1);
+      const [, payload] = firestoreMocks.setDoc.mock.calls[0];
+      expect(payload).toMatchObject({ id: "u1", email: "a@b.com" });
+    });
+
+    it("leaves an existing profile untouched", async () => {
+      firestoreMocks.getDoc.mockResolvedValue({
+        exists: () => true,
+        data: () => ({ id: "u1", email: "a@b.com" }),
+      });
+
+      await ensureUserProfile("u1", "a@b.com");
+
+      expect(firestoreMocks.setDoc).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("setYearlyGoal", () => {
+    it("merges only the given year's goal into the profile", async () => {
+      await setYearlyGoal("u1", 2026, 24);
+
+      const [ref, data, options] = firestoreMocks.setDoc.mock.calls[0];
+      expect((ref as DocRef).path.slice(1)).toEqual(["users", "u1"]);
+      expect(data).toEqual({ yearlyGoals: { "2026": 24 } });
+      expect(options).toEqual({ merge: true });
+    });
+
+    it("clears a goal with null", async () => {
+      await setYearlyGoal("u1", 2026, null);
+      expect(firestoreMocks.setDoc.mock.calls[0][1]).toEqual({ yearlyGoals: { "2026": null } });
     });
   });
 });

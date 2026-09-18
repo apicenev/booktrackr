@@ -1,6 +1,6 @@
 import AppRouter from "./router/AppRouter";
 import { BrowserRouter } from "react-router-dom";
-import { useAuth } from "./lib/hooks/useAuth";
+import { useAuth } from "./lib/auth/useAuth";
 
 function App() {
   const { initializing } = useAuth();

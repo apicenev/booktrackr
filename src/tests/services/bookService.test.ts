@@ -39,8 +39,14 @@ const firestoreMocks = vi.hoisted(() => {
     updateDoc: vi.fn(),
     deleteDoc: vi.fn(),
     onSnapshot: vi.fn(),
+    writeBatch: vi.fn(),
   };
 });
+
+const batch = vi.hoisted(() => ({
+  delete: vi.fn(),
+  commit: vi.fn(),
+}));
 
 vi.mock("firebase/firestore", () => {
   return {
@@ -53,11 +59,11 @@ vi.mock("firebase/firestore", () => {
     updateDoc: firestoreMocks.updateDoc,
     deleteDoc: firestoreMocks.deleteDoc,
     onSnapshot: firestoreMocks.onSnapshot,
+    writeBatch: firestoreMocks.writeBatch,
   };
 });
 
 import {
-  cascadeDeleteBook,
   createBook,
   deleteBook,
   getBook,
@@ -77,7 +83,7 @@ describe("bookService", () => {
     firestoreMocks.query.mockImplementation((ref: unknown) => ({ kind: "query", ref }));
 
     firestoreMocks.doc.mockImplementation((a: unknown, ...rest: unknown[]) => {
-      if (a && typeof a === "object" && (a as any).kind === "collection") {
+      if (a && typeof a === "object" && (a as { kind?: string }).kind === "collection") {
         return makeDocRef([a, ...rest]);
       }
       // doc(db, "users", ..., "books", bookId)
@@ -87,6 +93,8 @@ describe("bookService", () => {
     firestoreMocks.deleteDoc.mockResolvedValue(undefined);
     firestoreMocks.updateDoc.mockResolvedValue(undefined);
     firestoreMocks.addDoc.mockResolvedValue({ id: "new-book-id" });
+    firestoreMocks.writeBatch.mockReturnValue(batch);
+    batch.commit.mockResolvedValue(undefined);
   });
 
   describe("getBooks", () => {
@@ -177,7 +185,16 @@ describe("bookService", () => {
 
       const [, payload] = firestoreMocks.addDoc.mock.calls[0];
       expect(payload.status).toBe("reading");
+      expect(payload.startedAt).toBeInstanceOf(Date);
+      expect(payload.finishedAt).toBeUndefined();
       expect(id).toBe("new-book-id");
+    });
+
+    it("keeps Open Library metadata", async () => {
+      await createBook("u1", { title: "T", author: "A", coverId: 42, openLibraryKey: "/works/OL1W" });
+
+      const [, payload] = firestoreMocks.addDoc.mock.calls[0];
+      expect(payload).toMatchObject({ coverId: 42, openLibraryKey: "/works/OL1W" });
     });
 
     it("propagates firestore errors", async () => {
@@ -205,6 +222,14 @@ describe("bookService", () => {
       vi.useRealTimers();
     });
 
+    it("sends null instead of undefined so clearing page counts does not throw", async () => {
+      await updateBook("u1", "b1", { status: "reading", totalPages: undefined, pagesRead: undefined });
+
+      const [, payload] = firestoreMocks.updateDoc.mock.calls[0];
+      expect(payload).toMatchObject({ status: "reading", totalPages: null, pagesRead: null });
+      expect(Object.values(payload)).not.toContain(undefined);
+    });
+
     it("propagates firestore errors", async () => {
       firestoreMocks.updateDoc.mockRejectedValue(new Error("update failed"));
 
@@ -213,24 +238,60 @@ describe("bookService", () => {
   });
 
   describe("deleteBook", () => {
-    it("deletes the book doc", async () => {
+    it("deletes notes, action items and reading sessions together with the book in one batch", async () => {
+      const note1 = { ref: makeDocRef(["note-1"]) };
+      const note2 = { ref: makeDocRef(["note-2"]) };
+      const action = { ref: makeDocRef(["action-1"]) };
+
+      firestoreMocks.getDocs
+        .mockResolvedValueOnce({ docs: [note1, note2] }) // notes
+        .mockResolvedValueOnce({ docs: [action] }) // actionItems
+        .mockResolvedValueOnce({ docs: [] }); // readingSessions
+
       await deleteBook("u1", "b1");
 
-      expect(firestoreMocks.deleteDoc).toHaveBeenCalledTimes(1);
-      expect(firestoreMocks.doc).toHaveBeenCalled();
+      const queried = firestoreMocks.collection.mock.calls.map((c) => c.at(-1));
+      expect(queried).toEqual(expect.arrayContaining(["notes", "actionItems", "readingSessions"]));
+
+      expect(batch.delete).toHaveBeenCalledTimes(2 + 1 + 0 + 1);
+      expect(batch.delete).toHaveBeenNthCalledWith(1, note1.ref);
+      // The book document is deleted last.
+      const lastRef = batch.delete.mock.calls.at(-1)?.[0] as DocRef;
+      expect(lastRef.path.slice(1)).toEqual(["users", "u1", "books", "b1"]);
+      expect(batch.commit).toHaveBeenCalledTimes(1);
     });
 
-    it("propagates firestore errors", async () => {
-      firestoreMocks.deleteDoc.mockRejectedValue(new Error("delete failed"));
+    it("splits very large deletes into batches of at most 500 writes", async () => {
+      const many = Array.from({ length: 600 }, (_, i) => ({ ref: makeDocRef([`note-${i}`]) }));
+      firestoreMocks.getDocs
+        .mockResolvedValueOnce({ docs: many })
+        .mockResolvedValue({ docs: [] });
 
-      await expect(deleteBook("u1", "b1")).rejects.toThrow("delete failed");
+      await deleteBook("u1", "b1");
+
+      expect(batch.delete).toHaveBeenCalledTimes(601);
+      expect(batch.commit).toHaveBeenCalledTimes(2);
+    });
+
+    it("propagates errors from the batch commit", async () => {
+      firestoreMocks.getDocs.mockResolvedValue({ docs: [] });
+      batch.commit.mockRejectedValueOnce(new Error("commit failed"));
+
+      await expect(deleteBook("u1", "b1")).rejects.toThrow("commit failed");
+    });
+
+    it("propagates errors from getDocs without deleting anything", async () => {
+      firestoreMocks.getDocs.mockRejectedValue(new Error("getDocs failed"));
+
+      await expect(deleteBook("u1", "b1")).rejects.toThrow("getDocs failed");
+      expect(batch.commit).not.toHaveBeenCalled();
     });
   });
 
   describe("listenToBooks", () => {
     it("subscribes and calls callback with mapped docs; returns unsubscribe", () => {
       const unsubscribe = vi.fn();
-      firestoreMocks.onSnapshot.mockImplementation((_ref: unknown, cb: (snap: any) => void) => {
+      firestoreMocks.onSnapshot.mockImplementation((_ref: unknown, cb: (snap: unknown) => void) => {
         cb({
           docs: [
             { data: () => ({ id: "b1" }) },
@@ -249,41 +310,4 @@ describe("bookService", () => {
     });
   });
 
-  describe("cascadeDeleteBook", () => {
-    it("deletes notes/actionItems/readingSessions docs then deletes the book doc", async () => {
-      const noteDocRef1 = { ref: makeDocRef(["note-1"]) };
-      const noteDocRef2 = { ref: makeDocRef(["note-2"]) };
-      const actionDocRef = { ref: makeDocRef(["action-1"]) };
-
-      firestoreMocks.getDocs
-        .mockResolvedValueOnce({ docs: [noteDocRef1, noteDocRef2] }) // notes
-        .mockResolvedValueOnce({ docs: [actionDocRef] }) // actionItems
-        .mockResolvedValueOnce({ docs: [] }); // readingSessions
-
-      await cascadeDeleteBook("u1", "b1");
-
-      // deleteDoc called for each subcollection doc + final book doc
-      expect(firestoreMocks.deleteDoc).toHaveBeenCalledTimes(2 + 1 + 0 + 1);
-
-      // final delete: doc(db, "users", userId, "books", bookId)
-      const lastCallArg = firestoreMocks.deleteDoc.mock.calls.at(-1)?.[0] as DocRef;
-      expect(lastCallArg.kind).toBe("doc");
-    });
-
-    it("propagates errors if deleting a subcollection fails", async () => {
-      firestoreMocks.getDocs.mockResolvedValueOnce({
-        docs: [{ ref: makeDocRef(["note-1"]) }],
-      });
-
-      firestoreMocks.deleteDoc.mockRejectedValueOnce(new Error("sub-delete failed"));
-
-      await expect(cascadeDeleteBook("u1", "b1")).rejects.toThrow("sub-delete failed");
-    });
-
-    it("propagates errors from getDocs", async () => {
-      firestoreMocks.getDocs.mockRejectedValue(new Error("getDocs failed"));
-
-      await expect(cascadeDeleteBook("u1", "b1")).rejects.toThrow("getDocs failed");
-    });
-  });
 });

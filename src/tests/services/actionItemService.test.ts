@@ -6,12 +6,6 @@ vi.mock("../../lib/firebase", () => {
   };
 });
 
-vi.mock("uuid", () => {
-  return {
-    v4: vi.fn(() => "fixed-uuid"),
-  };
-});
-
 type CollectionRef = {
   kind: "collection";
   path: unknown[];
@@ -79,7 +73,7 @@ describe("actionItemService", () => {
     firestoreMocks.query.mockImplementation((ref: unknown) => ({ kind: "query", ref }));
 
     firestoreMocks.doc.mockImplementation((a: unknown, ...rest: unknown[]) => {
-      if (a && typeof a === "object" && (a as any).kind === "collection") {
+      if (a && typeof a === "object" && (a as { kind?: string }).kind === "collection") {
         return makeDocRef([a, ...rest]);
       }
       return makeDocRef([a, ...rest]);
@@ -149,26 +143,23 @@ describe("actionItemService", () => {
   });
 
   describe("createActionItem", () => {
-    it("creates action item with deterministic uuid and createdAt", async () => {
+    it("creates an open action item for the book in the path and returns its id", async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2024-03-03T00:00:00.000Z"));
 
-      await createActionItem("u1", "b1", {
-        bookId: "b1",
-        description: "Do thing",
-        status: "open",
-      });
+      const id = await createActionItem("u1", "b1", { description: "Do thing" });
 
       expect(firestoreMocks.addDoc).toHaveBeenCalledTimes(1);
       const [, payload] = firestoreMocks.addDoc.mock.calls[0];
 
+      // bookId comes from the path, never from the caller (previously stored as "").
       expect(payload).toMatchObject({
-        id: "fixed-uuid",
         bookId: "b1",
         description: "Do thing",
         status: "open",
       });
       expect(payload.createdAt).toBeInstanceOf(Date);
+      expect(id).toBe("firestore-doc-id");
 
       vi.useRealTimers();
     });
@@ -177,11 +168,7 @@ describe("actionItemService", () => {
       firestoreMocks.addDoc.mockRejectedValue(new Error("write failed"));
 
       await expect(
-        createActionItem("u1", "b1", {
-          bookId: "b1",
-          description: "Do thing",
-          status: "open",
-        })
+        createActionItem("u1", "b1", { description: "Do thing" })
       ).rejects.toThrow("write failed");
     });
   });
@@ -194,6 +181,13 @@ describe("actionItemService", () => {
       const [, payload] = firestoreMocks.updateDoc.mock.calls[0];
 
       expect(payload).toEqual({ status: "done" });
+    });
+
+    it("sends null instead of undefined when clearing a field (reopening an item)", async () => {
+      await updateActionItem("u1", "b1", "a1", { status: "open", completedAt: undefined });
+
+      const [, payload] = firestoreMocks.updateDoc.mock.calls[0];
+      expect(payload).toEqual({ status: "open", completedAt: null });
     });
 
     it("propagates firestore errors", async () => {

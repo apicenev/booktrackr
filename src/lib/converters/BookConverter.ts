@@ -1,9 +1,6 @@
 import { type FirestoreDataConverter, type QueryDocumentSnapshot, type SnapshotOptions, Timestamp } from "firebase/firestore";
 import { type Book } from "../../types/Book";
-
-const toDate = (value: Timestamp | Date): Date => {
-  return value instanceof Timestamp ? value.toDate() : value;
-};
+import { toDate } from "../firestoreUtils";
 
 export const bookConverter: FirestoreDataConverter<Book> = {
   toFirestore(book: Book) {
@@ -16,7 +13,10 @@ export const bookConverter: FirestoreDataConverter<Book> = {
       tags: book.tags ?? [],
       createdAt: Timestamp.fromDate(book.createdAt),
       updatedAt: Timestamp.fromDate(book.updatedAt),
-      coverId: book.coverId ?? null, // Ensure coverId is saved
+      coverId: book.coverId ?? null,
+      openLibraryKey: book.openLibraryKey ?? null,
+      startedAt: book.startedAt ? Timestamp.fromDate(book.startedAt) : null,
+      finishedAt: book.finishedAt ? Timestamp.fromDate(book.finishedAt) : null,
     };
   },
   fromFirestore(
@@ -34,7 +34,10 @@ export const bookConverter: FirestoreDataConverter<Book> = {
       tags: data.tags ?? [],
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
-      coverId: data.coverId ?? undefined, // Ensure coverId is retrieved
+      coverId: data.coverId ?? undefined,
+      openLibraryKey: data.openLibraryKey ?? undefined,
+      startedAt: data.startedAt ? toDate(data.startedAt) : undefined,
+      finishedAt: data.finishedAt ? toDate(data.finishedAt) : undefined,
     };
   },
 };

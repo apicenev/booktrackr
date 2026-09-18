@@ -3,5 +3,7 @@ export interface UserProfile {
   email: string;
   displayName?: string;
   photoURL?: string;
-  createdAt: Date;
+  createdAt?: Date;
+  /** Target number of finished books per year, keyed by year ("2026"). */
+  yearlyGoals?: Record<string, number>;
 }

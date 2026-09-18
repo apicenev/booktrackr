@@ -7,11 +7,12 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { actionItemConverter } from "../lib/converters/ActionItemConverter";
-import { type ActionItem } from "../types/ActionItem";
-import { v4 as uuidv4 } from "uuid";
+import { toUpdateData } from "../lib/firestoreUtils";
+import type { ActionItem, NewActionItemInput } from "../types/ActionItem";
 
 const actionItemsCollection = (userId: string, bookId: string) =>
   collection(db, "users", userId, "books", bookId, "actionItems").withConverter(actionItemConverter);
@@ -35,28 +36,43 @@ export const getActionItem = async (
   return snapshot.exists() ? snapshot.data() : null;
 };
 
+export const listenToActionItems = (
+  userId: string,
+  bookId: string,
+  callback: (items: ActionItem[]) => void,
+  onError?: (error: Error) => void
+) =>
+  onSnapshot(
+    actionItemsCollection(userId, bookId),
+    (snapshot) => callback(snapshot.docs.map((doc) => doc.data())),
+    onError
+  );
+
 export const createActionItem = async (
   userId: string,
   bookId: string,
-  payload: Omit<ActionItem, "id" | "createdAt" | "completedAt">
-): Promise<void> => {
-  await addDoc(actionItemsCollection(userId, bookId), {
-    id: uuidv4(),
-    ...payload,
+  input: Omit<NewActionItemInput, "bookId">
+): Promise<string> => {
+  const docRef = await addDoc(actionItemsCollection(userId, bookId), {
+    id: "", // ignored by the converter; Firestore assigns the id
+    bookId,
+    noteId: input.noteId,
+    description: input.description,
+    githubUrl: input.githubUrl,
+    status: "open",
     createdAt: new Date(),
   });
+  return docRef.id;
 };
 
 export const updateActionItem = async (
   userId: string,
   bookId: string,
   actionItemId: string,
-  partial: Partial<ActionItem>
+  partial: Partial<Omit<ActionItem, "id" | "bookId" | "createdAt">>
 ): Promise<void> => {
   const docRef = doc(actionItemsCollection(userId, bookId), actionItemId);
-  await updateDoc(docRef, {
-    ...partial,
-  });
+  await updateDoc(docRef, toUpdateData(partial));
 };
 
 export const deleteActionItem = async (

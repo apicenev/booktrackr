@@ -7,8 +7,5 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss()
-  ],
-  define: {
-    'process.env.VITE_API_KEY': JSON.stringify(process.env.VITE_API_KEY),
-  },
+  ]
 })

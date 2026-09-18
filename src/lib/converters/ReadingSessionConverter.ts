@@ -1,9 +1,6 @@
 import { type FirestoreDataConverter, type QueryDocumentSnapshot, type SnapshotOptions, Timestamp } from "firebase/firestore";
 import { type ReadingSession } from "../../types/ReadingSession";
-
-const toDate = (value: Timestamp | Date): Date => {
-  return value instanceof Timestamp ? value.toDate() : value;
-};
+import { toDate } from "../firestoreUtils";
 
 export const readingSessionConverter: FirestoreDataConverter<ReadingSession> = {
   toFirestore(session: ReadingSession) {

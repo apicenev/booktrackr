@@ -1,9 +1,6 @@
 import { type FirestoreDataConverter, type QueryDocumentSnapshot, type SnapshotOptions, Timestamp } from "firebase/firestore";
 import { type ActionItem } from "../../types/ActionItem";
-
-const toDate = (value: Timestamp | Date): Date => {
-  return value instanceof Timestamp ? value.toDate() : value;
-};
+import { toDate } from "../firestoreUtils";
 
 export const actionItemConverter: FirestoreDataConverter<ActionItem> = {
   toFirestore(action: ActionItem) {

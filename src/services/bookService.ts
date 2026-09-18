@@ -5,13 +5,20 @@ import {
   getDoc,
   addDoc,
   updateDoc,
-  deleteDoc,
   query,
   onSnapshot,
+  writeBatch,
+  type DocumentReference,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { bookConverter } from "../lib/converters/BookConverter";
+import { toUpdateData } from "../lib/firestoreUtils";
 import type { Book, NewBookInput } from "../types/Book";
+
+// Every subcollection stored under a book document. Keep in sync with the
+// services that own them so deleting a book never leaves orphaned data.
+const BOOK_SUBCOLLECTIONS = ["notes", "actionItems", "readingSessions"] as const;
+const MAX_BATCH_WRITES = 500;
 
 const booksCollection = (userId: string) =>
   collection(db, "users", userId, "books").withConverter(bookConverter);
@@ -36,13 +43,16 @@ export async function createBook(
   input: NewBookInput
 ): Promise<string> {
   const now = new Date();
+  const status = input.status ?? "to-read";
 
   const docRef = await addDoc(booksCollection(userId), {
     ...input,
-    status: input.status ?? "to-read",
+    status,
     createdAt: now,
     updatedAt: now,
-    id: ""
+    startedAt: status === "reading" ? now : undefined,
+    finishedAt: status === "finished" ? now : undefined,
+    id: "", // ignored by the converter; Firestore assigns the id
   });
 
   return docRef.id;
@@ -56,99 +66,45 @@ export async function updateBook(
   const docRef = doc(booksCollection(userId), bookId);
 
   await updateDoc(docRef, {
-    ...partial,
+    ...toUpdateData(partial),
     updatedAt: new Date(),
   });
 }
 
+/**
+ * Deletes a book together with its notes, action items and reading sessions.
+ * Writes are batched so a failure never leaves a half-deleted book behind
+ * (for books with fewer than 500 related documents).
+ */
 export async function deleteBook(
   userId: string,
   bookId: string
 ): Promise<void> {
-  const docRef = doc(booksCollection(userId), bookId);
-  await deleteDoc(docRef);
+  const snapshots = await Promise.all(
+    BOOK_SUBCOLLECTIONS.map((name) =>
+      getDocs(collection(db, "users", userId, "books", bookId, name))
+    )
+  );
+
+  const refs: DocumentReference[] = snapshots.flatMap((s) => s.docs.map((d) => d.ref));
+  // The book itself goes last so it only disappears once its children are gone.
+  refs.push(doc(db, "users", userId, "books", bookId));
+
+  for (let i = 0; i < refs.length; i += MAX_BATCH_WRITES) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + MAX_BATCH_WRITES).forEach((ref) => batch.delete(ref));
+    await batch.commit();
+  }
 }
 
 export function listenToBooks(
   userId: string,
-  callback: (books: Book[]) => void
+  callback: (books: Book[]) => void,
+  onError?: (error: Error) => void
 ) {
-  return onSnapshot(booksCollection(userId), (snapshot) => {
-    const books = snapshot.docs.map((doc) => doc.data());
-    callback(books);
-  });
-}
-
-/**
- * Deletes a book and all related subcollections:
- * - notes
- * - actionItems
- * - readingSessions
- */
-export async function cascadeDeleteBook(
-  userId: string,
-  bookId: string
-): Promise<void> {
-  const notesRef = collection(db, "users", userId, "books", bookId, "notes");
-  const actionItemsRef = collection(
-    db,
-    "users",
-    userId,
-    "books",
-    bookId,
-    "actionItems"
+  return onSnapshot(
+    booksCollection(userId),
+    (snapshot) => callback(snapshot.docs.map((doc) => doc.data())),
+    onError
   );
-  const readingSessionsRef = collection(
-    db,
-    "users",
-    userId,
-    "books",
-    bookId,
-    "readingSessions"
-  );
-
-  const deleteCollection = async (ref: typeof notesRef) => {
-    const snapshot = await getDocs(ref);
-    const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
-  };
-
-  await deleteCollection(notesRef);
-  await deleteCollection(actionItemsRef);
-  await deleteCollection(readingSessionsRef);
-  await deleteDoc(doc(db, "users", userId, "books", bookId));
 }
-
-const addBookToLibrary = async (
-  userId: string,
-  book: { key: string; title: string; author_name?: string[]; cover_i?: number }
-): Promise<void> => {
-  const now = new Date();
-
-  const docRef = await addDoc(booksCollection(userId), {
-    title: book.title,
-    author: book.author_name?.join(", ") || "Unknown",
-    status: "to-read",
-    totalPages: undefined,
-    pagesRead: undefined,
-    tags: [],
-    createdAt: now,
-    updatedAt: now,
-    id: "",
-    coverId: book.cover_i || undefined, // Save cover image ID
-  });
-
-  // Update the document with its generated ID
-  await updateDoc(docRef, { id: docRef.id });
-};
-
-export default {
-  getBooks,
-  getBook,
-  createBook,
-  updateBook,
-  deleteBook,
-  listenToBooks,
-  cascadeDeleteBook,
-  addBookToLibrary,
-};

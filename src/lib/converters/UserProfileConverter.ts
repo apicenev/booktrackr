@@ -1,9 +1,6 @@
 import { type FirestoreDataConverter, type QueryDocumentSnapshot, type SnapshotOptions, Timestamp } from "firebase/firestore";
 import { type UserProfile } from "../../types/UserProfile";
-
-const toDate = (value: Timestamp | Date): Date => {
-  return value instanceof Timestamp ? value.toDate() : value;
-};
+import { toDate } from "../firestoreUtils";
 
 export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
   toFirestore(user: UserProfile) {
@@ -11,7 +8,8 @@ export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
       email: user.email,
       displayName: user.displayName ?? null,
       photoURL: user.photoURL ?? null,
-      createdAt: Timestamp.fromDate(user.createdAt),
+      createdAt: user.createdAt ? Timestamp.fromDate(user.createdAt) : null,
+      yearlyGoals: user.yearlyGoals ?? {},
     };
   },
   fromFirestore(
@@ -21,10 +19,11 @@ export const userProfileConverter: FirestoreDataConverter<UserProfile> = {
     const data = snapshot.data(options)!;
     return {
       id: snapshot.id,
-      email: data.email,
+      email: data.email ?? "",
       displayName: data.displayName ?? undefined,
       photoURL: data.photoURL ?? undefined,
-      createdAt: toDate(data.createdAt),
+      createdAt: data.createdAt ? toDate(data.createdAt) : undefined,
+      yearlyGoals: data.yearlyGoals ?? {},
     };
   },
 };

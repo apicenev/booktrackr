@@ -1,9 +1,6 @@
 import { type FirestoreDataConverter, type QueryDocumentSnapshot, type SnapshotOptions, Timestamp } from "firebase/firestore";
 import { type Note } from "../../types/Note";
-
-const toDate = (value: Timestamp | Date): Date => {
-  return value instanceof Timestamp ? value.toDate() : value;
-};
+import { toDate } from "../firestoreUtils";
 
 export const noteConverter: FirestoreDataConverter<Note> = {
   toFirestore(note: Note) {
@@ -12,6 +9,8 @@ export const noteConverter: FirestoreDataConverter<Note> = {
       title: note.title,
       content: note.content,
       tags: note.tags ?? [],
+      isKeyInsight: note.isKeyInsight ?? false,
+      linkedBookIds: note.linkedBookIds ?? [],
       createdAt: Timestamp.fromDate(note.createdAt),
       updatedAt: Timestamp.fromDate(note.updatedAt),
     };
@@ -24,6 +23,8 @@ export const noteConverter: FirestoreDataConverter<Note> = {
       title: data.title,
       content: data.content,
       tags: data.tags ?? [],
+      isKeyInsight: data.isKeyInsight ?? false,
+      linkedBookIds: data.linkedBookIds ?? [],
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
     };

@@ -73,7 +73,7 @@ describe("noteService", () => {
     firestoreMocks.query.mockImplementation((ref: unknown) => ({ kind: "query", ref }));
 
     firestoreMocks.doc.mockImplementation((a: unknown, ...rest: unknown[]) => {
-      if (a && typeof a === "object" && (a as any).kind === "collection") {
+      if (a && typeof a === "object" && (a as { kind?: string }).kind === "collection") {
         return makeDocRef([a, ...rest]);
       }
       return makeDocRef([a, ...rest]);
@@ -165,6 +165,14 @@ describe("noteService", () => {
       expect(id).toBe("new-note-id");
 
       vi.useRealTimers();
+    });
+
+    it("stores key-insight flag and linked books (defaults: false / [])", async () => {
+      await createNote("u1", "b1", { title: "T", content: "C" });
+      expect(firestoreMocks.addDoc.mock.calls[0][1]).toMatchObject({ isKeyInsight: false, linkedBookIds: [] });
+
+      await createNote("u1", "b1", { title: "T", content: "C", isKeyInsight: true, linkedBookIds: ["b2"] });
+      expect(firestoreMocks.addDoc.mock.calls[1][1]).toMatchObject({ isKeyInsight: true, linkedBookIds: ["b2"] });
     });
 
     it("uses provided tags if present", async () => {

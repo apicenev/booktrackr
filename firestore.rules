@@ -1,0 +1,38 @@
+rules_version = '2';
+
+// BookTrackr has no backend: the browser talks to Firestore directly, so these
+// rules are the only authorization layer. Every document lives under
+// /users/{uid}/... and is readable/writable by that user only. Anything not
+// matched below is denied.
+//
+// Deploy: firebase deploy --only firestore:rules --project <your-project-id>
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidBook(book) {
+      return book.title is string && book.title.size() > 0 && book.title.size() <= 1000
+        && book.author is string && book.author.size() <= 1000
+        && book.status in ['wishlist', 'to-read', 'reading', 'finished']
+        && (book.get('totalPages', null) == null || (book.totalPages is int && book.totalPages > 0))
+        && (book.get('pagesRead', null) == null || (book.pagesRead is int && book.pagesRead >= 0));
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /books/{bookId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidBook(request.resource.data);
+
+        match /{subcollection}/{docId} {
+          allow read, write: if isOwner(userId)
+            && subcollection in ['notes', 'actionItems', 'readingSessions'];
+        }
+      }
+    }
+  }
+}

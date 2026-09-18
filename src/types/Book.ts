@@ -1,4 +1,8 @@
-export type BookStatus = "to-read" | "reading" | "finished";
+/**
+ * "wishlist" = interested but not committed (e.g. not owned yet). Wishlist
+ * books live on the Wishlist page; the other statuses make up the Library.
+ */
+export type BookStatus = "wishlist" | "to-read" | "reading" | "finished";
 
 export interface Book {
   id: string;
@@ -10,7 +14,14 @@ export interface Book {
   tags?: string[];
   createdAt: Date;
   updatedAt: Date;
-  coverId?: number; // Optional field for Open Library cover image ID
+  /** Open Library cover image ID. */
+  coverId?: number;
+  /** Open Library work key (e.g. "/works/OL17618370W"), used to detect duplicates. */
+  openLibraryKey?: string;
+  /** Set the first time the book moves to "reading". */
+  startedAt?: Date;
+  /** Set when the book moves to "finished"; cleared if it moves back. */
+  finishedAt?: Date;
 }
 
 export interface NewBookInput {
@@ -19,4 +30,6 @@ export interface NewBookInput {
   status?: BookStatus; // default "to-read" if not provided
   totalPages?: number;
   tags?: string[];
+  coverId?: number;
+  openLibraryKey?: string;
 }
