@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { MagnifyingGlassIcon, PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
 import { deleteBook } from "../services/bookService";
 import { useAuth } from "../lib/auth/useAuth";
 import { useLibrary } from "../lib/library/useLibrary";
@@ -8,6 +9,9 @@ import { LIBRARY_STATUSES, STATUS_LABEL, isInLibrary, progressPercent } from "..
 import BookCover from "../components/book/BookCover";
 import StatusBadge from "../components/book/StatusBadge";
 import ProgressBar from "../components/book/ProgressBar";
+import PageHeader from "../components/ui/PageHeader";
+import EmptyState from "../components/ui/EmptyState";
+import { BookOpenIcon, FunnelIcon } from "@heroicons/react/24/outline";
 
 type BookFilter = "all" | BookStatus;
 
@@ -65,21 +69,17 @@ export default function LibraryPage() {
       : "No books match your filters.";
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/50 px-6 py-5 shadow-lg shadow-black/20 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-100">Your Library</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Browse your books, jump into details, and capture insights.
-          </p>
-        </div>
-        <Link
-          to="/explore"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500"
-        >
-          <span aria-hidden="true">+</span> Find books
-        </Link>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Your Library"
+        description="Browse your books, jump into details, and capture insights."
+        actions={
+          <Link to="/explore" className="btn btn-primary">
+            <PlusIcon aria-hidden="true" className="size-4" />
+            Find books
+          </Link>
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by status">
@@ -91,88 +91,92 @@ export default function LibraryPage() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setFilter(f.key)}
-                className={[
-                  "rounded-full px-4 py-2 text-sm transition cursor-pointer ring-1",
-                  active
-                    ? "bg-indigo-600 text-white ring-indigo-500/40"
-                    : "bg-slate-900/60 text-slate-200 ring-slate-800/80 hover:bg-slate-800/60",
-                ].join(" ")}
+                className="chip"
               >
-                {f.label} <span className="opacity-70">{counts[f.key]}</span>
+                {f.label} <span className="tabular-nums opacity-70">{counts[f.key]}</span>
               </button>
             );
           })}
         </div>
 
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search title or author"
-          aria-label="Search library"
-          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 sm:w-64"
-        />
+        <div className="relative w-full sm:w-64">
+          <MagnifyingGlassIcon
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-subtle"
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search title or author"
+            aria-label="Search library"
+            className="h-9 w-full rounded-control border border-control bg-surface pr-3 pl-9 text-sm text-ink transition placeholder:text-ink-subtle focus:border-brand focus:ring-3 focus:ring-brand/15 focus:outline-none"
+          />
+        </div>
       </div>
 
       {actionError && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="alert-error">
           {actionError}
         </p>
       )}
 
       {loadError ? (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="alert-error">
           {loadError}
         </p>
       ) : !booksLoaded ? (
-        <p className="text-sm text-slate-400 animate-pulse">Loading your library…</p>
-      ) : visibleBooks.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center">
-          <p className="text-sm text-slate-400">{emptyCopy}</p>
-          {counts.all === 0 && (
-            <Link
-              to="/explore"
-              className="mt-4 inline-block rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
-            >
-              Explore books
-            </Link>
-          )}
+        <div>
+        <p className="sr-only">Loading your library…</p>
+        <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" aria-hidden="true">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="space-y-3">
+              <div className="skeleton aspect-[2/3] w-full" />
+              <div className="skeleton h-4 w-4/5" />
+              <div className="skeleton h-3 w-1/2" />
+            </div>
+          ))}
         </div>
+        </div>
+      ) : visibleBooks.length === 0 ? (
+        <EmptyState
+          icon={counts.all === 0 ? BookOpenIcon : FunnelIcon}
+          action={
+            counts.all === 0 && (
+              <Link to="/explore" className="btn btn-primary">
+                Explore books
+              </Link>
+            )
+          }
+        >
+          {emptyCopy}
+        </EmptyState>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <ul className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {visibleBooks.map((book) => {
             const percent = progressPercent(book);
             return (
               <li key={book.id} className="group relative">
-                <Link
-                  to={`/books/${book.id}`}
-                  className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-900/50 p-4 pr-14 shadow-lg shadow-black/20 backdrop-blur transition hover:border-indigo-500/30 hover:bg-slate-900/65 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-                >
-                  <BookCover title={book.title} coverId={book.coverId} />
-
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-base font-semibold text-slate-100">{book.title}</h3>
-                    <p className="mt-0.5 truncate text-sm text-slate-400">{book.author}</p>
-                    <div className="mt-2">
-                      <StatusBadge status={book.status} />
-                    </div>
-
-                    {percent !== null ? (
-                      <div className="mt-3">
-                        <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
-                          <span>Progress</span>
-                          <span>
-                            {book.pagesRead ?? 0}/{book.totalPages}
-                          </span>
-                        </div>
-                        <ProgressBar percent={percent} label={`Progress of ${book.title}`} />
-                      </div>
-                    ) : (
-                      <p className="mt-3 text-xs text-slate-500">
-                        Open to add notes, action items, and progress.
-                      </p>
-                    )}
+                <Link to={`/books/${book.id}`} className="block rounded-control focus-visible:outline-offset-4">
+                  <div className="transition duration-200 group-hover:-translate-y-1">
+                    <BookCover title={book.title} author={book.author} coverId={book.coverId} size="fill" />
                   </div>
+                  <h3 className="book-title mt-3 line-clamp-2 text-base group-hover:text-brand-ink">
+                    {book.title}
+                  </h3>
+                  <p className="mt-0.5 truncate text-sm text-ink-muted">{book.author}</p>
+                  <div className="mt-2">
+                    <StatusBadge status={book.status} />
+                  </div>
+
+                  {percent !== null && (
+                    <div className="mt-2.5">
+                      <ProgressBar percent={percent} label={`Progress of ${book.title}`} />
+                      <p className="mt-1 text-xs text-ink-subtle tabular-nums">
+                        {book.pagesRead ?? 0}/{book.totalPages}
+                      </p>
+                    </div>
+                  )}
                 </Link>
 
                 {/* Sibling of the link (not nested) so both stay valid, focusable controls. */}
@@ -180,9 +184,9 @@ export default function LibraryPage() {
                   type="button"
                   onClick={() => handleDelete(book)}
                   aria-label={`Delete ${book.title}`}
-                  className="absolute right-3 top-3 grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-slate-800/80 text-slate-300 transition hover:bg-red-600 hover:text-white focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500/40 sm:opacity-0 sm:group-hover:opacity-100"
+                  className="absolute top-2 right-2 grid size-8 cursor-pointer place-items-center rounded-full bg-surface/90 text-ink-muted shadow-card transition hover:bg-danger hover:text-white focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 >
-                  <span aria-hidden="true">🗑️</span>
+                  <TrashIcon aria-hidden="true" className="size-4" />
                 </button>
               </li>
             );

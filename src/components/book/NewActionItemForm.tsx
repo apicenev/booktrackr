@@ -1,9 +1,7 @@
 import { useState } from "react";
+import { PlusIcon } from "@heroicons/react/16/solid";
 import { useAuth } from "../../lib/auth/useAuth";
 import { createActionItem } from "../../services/actionItemService";
-
-const inputClass =
-  "mt-1 w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40";
 
 export default function NewActionItemForm({ bookId }: { bookId: string }) {
   const { user } = useAuth();
@@ -37,11 +35,11 @@ export default function NewActionItemForm({ bookId }: { bookId: string }) {
   };
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+    <form onSubmit={submit} className="well p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-100">New action</h3>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <h3 className="text-sm font-semibold text-ink">New action</h3>
+          <p className="mt-0.5 text-xs text-ink-subtle">
             Concrete next step you’ll apply. Add a link (issue, PR, doc) if relevant.
           </p>
         </div>
@@ -49,36 +47,37 @@ export default function NewActionItemForm({ bookId }: { bookId: string }) {
         <button
           type="submit"
           disabled={saving || !description.trim()}
-          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn btn-sm btn-primary"
         >
+          <PlusIcon aria-hidden="true" className="size-4" />
           {saving ? "Adding…" : "Add"}
         </button>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3">
-        <label className="block text-xs font-medium text-slate-400">
+        <label className="field">
           Description
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
-            className={inputClass}
+            className="input"
             placeholder="Create a reusable Firebase converter helper for all entities"
           />
         </label>
 
-        <label className="block text-xs font-medium text-slate-400">
-          Link (optional)
+        <label className="field">
+          Link <span className="field-hint">(optional)</span>
           <input
             type="url"
             value={githubUrl}
             onChange={(e) => setGithubUrl(e.target.value)}
-            className={inputClass}
+            className="input"
             placeholder="https://github.com/yourname/booktrackr/pull/12"
           />
         </label>
 
-        {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
+        {error && <p role="alert" className="text-xs text-danger-ink">{error}</p>}
       </div>
     </form>
   );

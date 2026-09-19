@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useAuth } from "../../lib/auth/useAuth";
 import { useLibrary } from "../../lib/library/useLibrary";
 import { deleteReadingSessionAndRevert } from "../../services/readingSessionService";
@@ -37,41 +38,37 @@ export default function SessionHistory({ book }: { book: Book }) {
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-slate-100">Reading history</h3>
+      <h3 className="eyebrow">Reading history</h3>
       {error && (
-        <p role="alert" className="mt-1 text-xs text-red-400">
+        <p role="alert" className="mt-1 text-xs text-danger-ink">
           {error}
         </p>
       )}
-      <ul className="mt-2 divide-y divide-slate-800 text-sm">
+      <ul className="mt-2 divide-y divide-line text-sm">
         {visible.map((s) => (
-          <li key={s.id} className="flex items-center justify-between gap-2 py-1.5">
-            <span className="text-slate-400">
+          <li key={s.id} className="flex items-center justify-between gap-2 py-2">
+            <span className="text-ink-muted">
               {s.startedAt.toLocaleDateString()}{" "}
-              <span className="text-slate-500">
+              <span className="text-ink-subtle">
                 {s.startedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </span>
             </span>
-            <span className="flex items-center gap-2">
-              <span className="text-slate-200">+{s.pagesRead ?? 0} pages</span>
+            <span className="flex items-center gap-1">
+              <span className="font-medium text-ink tabular-nums">+{s.pagesRead ?? 0} pages</span>
               <button
                 type="button"
                 onClick={() => undo(s)}
                 aria-label={`Remove entry from ${s.startedAt.toLocaleString()}`}
-                className="rounded px-1.5 text-slate-500 hover:bg-slate-800 hover:text-red-300"
+                className="btn btn-sm btn-icon btn-ghost hover:text-danger-ink"
               >
-                ×
+                <XMarkIcon aria-hidden="true" className="size-4" />
               </button>
             </span>
           </li>
         ))}
       </ul>
       {sorted.length > VISIBLE && (
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className="mt-1 text-xs text-slate-400 hover:text-slate-200"
-        >
+        <button type="button" onClick={() => setShowAll((v) => !v)} className="btn btn-sm btn-ghost -ml-2.5">
           {showAll ? "Show less" : `Show all ${sorted.length}`}
         </button>
       )}

@@ -1,10 +1,14 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { PencilSquareIcon, StarIcon, TrashIcon } from "@heroicons/react/16/solid";
 import { useAuth } from "../../lib/auth/useAuth";
 import { useLibrary } from "../../lib/library/useLibrary";
 import type { Note } from "../../types/Note";
 import { deleteNote, updateNote } from "../../services/noteService";
 import NoteForm, { type NoteValues } from "./NoteForm";
+import LoadingState from "../../components/ui/LoadingState";
+import EmptyState from "../../components/ui/EmptyState";
+import { DocumentTextIcon } from "@heroicons/react/24/outline";
 
 export default function NotesList({ bookId }: { bookId: string }) {
   const { user } = useAuth();
@@ -45,33 +49,31 @@ export default function NotesList({ bookId }: { bookId: string }) {
   };
 
   if (loadError) {
-    return <p role="alert" className="text-sm text-red-400">{loadError}</p>;
+    return <p role="alert" className="msg-error">{loadError}</p>;
   }
 
   if (!loaded) {
-    return <p className="text-sm text-slate-400 animate-pulse">Loading sections…</p>;
+    return <LoadingState label="Loading sections…" compact />;
   }
 
   if (sorted.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-5">
-        <p className="text-sm text-slate-400">
-          No sections yet. Create your first heading above.
-        </p>
-      </div>
+      <EmptyState icon={DocumentTextIcon} compact>
+        No sections yet. Create your first heading above.
+      </EmptyState>
     );
   }
 
   return (
     <div className="space-y-3">
       {actionError && (
-        <p role="alert" className="text-sm text-red-400">{actionError}</p>
+        <p role="alert" className="msg-error">{actionError}</p>
       )}
       {sorted.map((n) => {
         if (editingId === n.id) {
           return (
-            <article key={n.id} className="rounded-2xl border border-indigo-500/30 bg-slate-950/40 p-4">
-              <h4 className="mb-3 text-sm font-semibold text-slate-100">Edit section</h4>
+            <article key={n.id} className="rounded-card border border-brand/30 bg-surface p-5 ring-3 ring-brand/10">
+              <h4 className="mb-4 text-sm font-semibold text-ink">Edit section</h4>
               <NoteForm
                 bookId={bookId}
                 books={books}
@@ -92,38 +94,41 @@ export default function NotesList({ bookId }: { bookId: string }) {
         return (
           <article
             key={n.id}
-            className={`rounded-2xl border bg-slate-950/30 p-4 ${
-              n.isKeyInsight ? "border-amber-400/30" : "border-slate-800"
+            className={`rounded-card border bg-surface p-5 ${
+              n.isKeyInsight ? "border-warning/40 shadow-[inset_3px_0_0_var(--color-warning)]" : "border-line"
             }`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 {n.isKeyInsight && (
-                  <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-amber-300">
-                    <span aria-hidden="true">★ </span>Key insight
+                  <p className="mb-1.5 inline-flex items-center gap-1 text-xs font-medium tracking-wide text-warning-ink uppercase">
+                    <StarIcon aria-hidden="true" className="size-3.5" />
+                    Key insight
                   </p>
                 )}
-                <h4 className="text-sm font-semibold text-slate-100">{n.title}</h4>
-                <p className="mt-1 text-[11px] text-slate-500">
+                <h4 className="font-serif text-lg font-semibold leading-snug text-ink">{n.title}</h4>
+                <p className="mt-1 text-xs text-ink-subtle">
                   Updated {n.updatedAt.toLocaleString()}
                 </p>
               </div>
 
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 gap-1">
                 <button
                   type="button"
                   onClick={() => setEditingId(n.id)}
                   aria-label={`Edit section ${n.title}`}
-                  className="rounded-xl bg-slate-800/60 px-3 py-1.5 text-xs text-slate-200 ring-1 ring-slate-700/60 transition hover:bg-slate-700/60"
+                  className="btn btn-sm btn-ghost"
                 >
+                  <PencilSquareIcon aria-hidden="true" className="size-4" />
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => onDelete(n)}
                   aria-label={`Delete section ${n.title}`}
-                  className="rounded-xl bg-red-600/10 px-3 py-1.5 text-xs text-red-200 ring-1 ring-red-500/20 transition hover:bg-red-600/20"
+                  className="btn btn-sm btn-danger-ghost"
                 >
+                  <TrashIcon aria-hidden="true" className="size-4" />
                   Delete
                 </button>
               </div>
@@ -135,7 +140,7 @@ export default function NotesList({ bookId }: { bookId: string }) {
                   <Link
                     key={t}
                     to={`/knowledge?tag=${encodeURIComponent(t)}`}
-                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] text-slate-200 ring-1 ring-slate-700/70 bg-slate-900/40 hover:ring-slate-500"
+                    className="tag"
                   >
                     #{t}
                   </Link>
@@ -143,18 +148,18 @@ export default function NotesList({ bookId }: { bookId: string }) {
               </div>
             ) : null}
 
-            <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+            <div className="mt-3 max-w-prose whitespace-pre-wrap text-base leading-7 text-ink">
               {n.content}
             </div>
 
             {linked.length > 0 && (
-              <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+              <p className="mt-4 flex flex-wrap items-center gap-1.5 text-xs text-ink-subtle">
                 Related:
                 {linked.map((b) => (
                   <Link
                     key={b.id}
                     to={`/books/${b.id}`}
-                    className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-indigo-200 ring-1 ring-indigo-400/30 hover:bg-indigo-500/20"
+                    className="rounded-badge bg-brand-soft px-2 py-0.5 font-medium text-brand-ink hover:bg-brand/15"
                   >
                     {b.title}
                   </Link>
