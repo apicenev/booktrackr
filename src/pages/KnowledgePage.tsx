@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { ArrowsRightLeftIcon, LinkIcon, MagnifyingGlassIcon, StarIcon } from "@heroicons/react/16/solid";
 import { useAuth } from "../lib/auth/useAuth";
 import { useLibrary } from "../lib/library/useLibrary";
 import { updateActionItem } from "../services/actionItemService";
@@ -11,10 +12,13 @@ import {
   type KnowledgeKind,
 } from "../domain/knowledge";
 import type { ActionItem } from "../types/ActionItem";
+import LoadingState from "../components/ui/LoadingState";
+import EmptyState from "../components/ui/EmptyState";
+import { LightBulbIcon } from "@heroicons/react/24/outline";
 
 const KINDS: { key: KnowledgeKind; label: string }[] = [
   { key: "all", label: "Everything" },
-  { key: "insights", label: "★ Key insights" },
+  { key: "insights", label: "Key insights" },
   { key: "notes", label: "Notes" },
   { key: "actions", label: "Action items" },
 ];
@@ -23,14 +27,6 @@ const ACTION_FILTERS: { key: ActionFilter; label: string }[] = [
   { key: "open", label: "Open" },
   { key: "done", label: "Done" },
 ];
-
-const chipClass = (active: boolean) =>
-  [
-    "rounded-full px-3 py-1.5 text-sm ring-1 transition",
-    active
-      ? "bg-indigo-600 text-white ring-indigo-500/40"
-      : "bg-slate-900/60 text-slate-200 ring-slate-800/80 hover:bg-slate-800/60",
-  ].join(" ");
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -43,7 +39,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
     <>
       {text.split(pattern).map((part, i) =>
         i % 2 === 1 ? (
-          <mark key={i} className="rounded bg-amber-400/25 px-0.5 text-inherit">
+          <mark key={i} className="rounded-sm bg-warning/20 px-0.5 text-inherit">
             {part}
           </mark>
         ) : (
@@ -104,23 +100,29 @@ export default function KnowledgePage() {
   const showConnections = !filtering && connections.length > 0;
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 px-6 py-5 shadow-lg shadow-black/20 backdrop-blur">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-100">Knowledge library</h1>
-        <p className="mt-1 text-sm text-slate-400">
+    <div className="space-y-8">
+      <div>
+        <h1 className="page-title">Knowledge library</h1>
+        <p className="page-lead">
           Every note, key insight and action item across your books — searchable in one place.
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
+        <div className="relative">
+        <MagnifyingGlassIcon
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-ink-subtle"
+        />
         <input
           type="search"
           value={query}
           onChange={(e) => setParam("q", e.target.value || null)}
           placeholder="Search notes, insights, actions and books…"
           aria-label="Search knowledge library"
-          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+          className="h-11 w-full rounded-control border border-control bg-surface pr-4 pl-11 text-base text-ink shadow-card transition placeholder:text-ink-subtle focus:border-brand focus:ring-3 focus:ring-brand/15 focus:outline-none"
         />
+        </div>
 
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="What to show">
           {KINDS.map((k) => (
@@ -129,8 +131,9 @@ export default function KnowledgePage() {
               type="button"
               aria-pressed={kind === k.key}
               onClick={() => setParam("kind", k.key === "all" ? null : k.key)}
-              className={chipClass(kind === k.key)}
+              className="chip"
             >
+              {k.key === "insights" && <StarIcon aria-hidden="true" className="size-3.5" />}
               {k.label}
             </button>
           ))}
@@ -139,7 +142,7 @@ export default function KnowledgePage() {
               value={actionStatus}
               onChange={(e) => setParam("status", e.target.value === "all" ? null : e.target.value)}
               aria-label="Action item status"
-              className="rounded-full border border-slate-800 bg-slate-950 px-3 py-1.5 text-sm text-slate-200"
+              className="h-8 cursor-pointer rounded-control border border-line bg-surface px-3 text-sm text-ink-muted transition hover:border-line-strong focus:border-brand focus:outline-none"
             >
               {ACTION_FILTERS.map((f) => (
                 <option key={f.key} value={f.key}>
@@ -158,12 +161,7 @@ export default function KnowledgePage() {
                 type="button"
                 aria-pressed={tag === t}
                 onClick={() => setParam("tag", tag === t ? null : t)}
-                className={[
-                  "rounded-full px-2.5 py-0.5 text-xs ring-1 transition",
-                  tag === t
-                    ? "bg-indigo-600 text-white ring-indigo-500/40"
-                    : "bg-slate-900/40 text-slate-300 ring-slate-700/70 hover:ring-slate-500",
-                ].join(" ")}
+                className="chip h-7 px-2.5 text-xs"
               >
                 #{t} <span className="opacity-60">{count}</span>
               </button>
@@ -173,31 +171,31 @@ export default function KnowledgePage() {
       </div>
 
       {actionError && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="alert-error">
           {actionError}
         </p>
       )}
 
       {error ? (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="alert-error">
           {error}
         </p>
       ) : !detailsLoaded ? (
-        <p className="text-sm text-slate-400 animate-pulse">Loading your knowledge library…</p>
+        <LoadingState label="Loading your knowledge library…" />
       ) : (
         <>
           {matchingBooks.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Books</h2>
+              <h2 className="eyebrow">Books</h2>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {matchingBooks.map((b) => (
                   <li key={b.id}>
                     <Link
                       to={`/books/${b.id}`}
-                      className="inline-block rounded-xl bg-slate-900/60 px-3 py-2 text-sm text-slate-200 ring-1 ring-slate-800 hover:ring-indigo-500/40"
+                      className="card card-interactive inline-block px-3 py-2 font-serif text-sm font-semibold text-ink"
                     >
                       <Highlight text={b.title} query={query} />
-                      <span className="text-slate-500"> · {b.author}</span>
+                      <span className="font-sans font-normal text-ink-subtle"> · {b.author}</span>
                     </Link>
                   </li>
                 ))}
@@ -206,50 +204,53 @@ export default function KnowledgePage() {
           )}
 
           <section aria-live="polite">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h2 className="eyebrow">
               {results.length} {results.length === 1 ? "result" : "results"}
             </h2>
             {results.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-400">
+              <EmptyState icon={LightBulbIcon} compact className="mt-3">
                 {notes.length + actionItems.length === 0
                   ? "Nothing captured yet. Open a book to add notes, key insights and action items."
                   : "Nothing matches these filters."}
-              </p>
+              </EmptyState>
             ) : (
               <ul className="mt-3 space-y-3">
                 {results.map((r) =>
                   r.type === "note" ? (
                     <li
                       key={`n-${r.note.id}`}
-                      className={`rounded-2xl border bg-slate-900/40 p-4 ${
-                        r.note.isKeyInsight ? "border-amber-400/30" : "border-slate-800"
+                      className={`card p-5 ${
+                        r.note.isKeyInsight ? "border-warning/40 shadow-[inset_3px_0_0_var(--color-warning)]" : ""
                       }`}
                     >
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                      <p className="eyebrow">
                         {r.note.isKeyInsight ? (
-                          <span className="text-amber-300">★ Key insight</span>
+                          <span className="inline-flex items-center gap-1 text-warning-ink">
+                            <StarIcon aria-hidden="true" className="size-3.5" />
+                            Key insight
+                          </span>
                         ) : (
                           "Note"
                         )}{" "}
                         ·{" "}
-                        <Link to={`/books/${r.book.id}`} className="normal-case text-indigo-300 hover:text-indigo-200">
+                        <Link to={`/books/${r.book.id}`} className="font-serif tracking-normal text-brand normal-case hover:underline">
                           {r.book.title}
                         </Link>
                       </p>
-                      <h3 className="mt-1 font-semibold text-slate-100">
+                      <h3 className="mt-1.5 font-serif text-lg font-semibold leading-snug text-ink">
                         <Highlight text={r.note.title} query={query} />
                       </h3>
-                      <p className="mt-1 line-clamp-4 whitespace-pre-wrap text-sm text-slate-300">
+                      <p className="mt-1.5 line-clamp-4 max-w-prose whitespace-pre-wrap text-sm leading-relaxed text-ink-muted">
                         <Highlight text={r.note.content} query={query} />
                       </p>
                       {(r.note.tags?.length || r.note.linkedBookIds?.length) ? (
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
                           {r.note.tags?.map((t) => (
                             <button
                               key={t}
                               type="button"
                               onClick={() => setParam("tag", t)}
-                              className="rounded-full bg-slate-900/40 px-2 py-0.5 text-slate-300 ring-1 ring-slate-700/70 hover:ring-slate-500"
+                              className="tag cursor-pointer"
                             >
                               #{t}
                             </button>
@@ -261,9 +262,10 @@ export default function KnowledgePage() {
                               <Link
                                 key={b.id}
                                 to={`/books/${b.id}`}
-                                className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-indigo-200 ring-1 ring-indigo-400/30"
+                                className="inline-flex items-center gap-1 rounded-badge bg-brand-soft px-2 py-0.5 font-medium text-brand-ink hover:bg-brand/15"
                               >
-                                ↔ {b.title}
+                                <LinkIcon aria-hidden="true" className="size-3" />
+                                {b.title}
                               </Link>
                             ))}
                         </div>
@@ -272,18 +274,18 @@ export default function KnowledgePage() {
                   ) : (
                     <li
                       key={`a-${r.action.id}`}
-                      className="flex items-start justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/40 p-4"
+                      className="card flex items-start justify-between gap-3 px-4 py-3"
                     >
                       <label className="flex min-w-0 cursor-pointer items-start gap-3">
                         <input
                           type="checkbox"
                           checked={r.action.status === "done"}
                           onChange={() => toggleAction(r.action)}
-                          className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-500"
+                          className="checkbox mt-0.5 accent-success"
                         />
                         <span
                           className={`text-sm ${
-                            r.action.status === "done" ? "text-slate-400 line-through" : "text-slate-200"
+                            r.action.status === "done" ? "text-ink-subtle line-through" : "text-ink"
                           }`}
                         >
                           <Highlight text={r.action.description} query={query} />
@@ -291,7 +293,7 @@ export default function KnowledgePage() {
                       </label>
                       <Link
                         to={`/books/${r.book.id}`}
-                        className="shrink-0 truncate text-xs text-indigo-300 hover:text-indigo-200"
+                        className="max-w-[40%] shrink-0 truncate font-serif text-xs text-brand hover:underline"
                       >
                         {r.book.title}
                       </Link>
@@ -304,20 +306,21 @@ export default function KnowledgePage() {
 
           {showConnections && (
             <section>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <h2 className="eyebrow">
                 Connections between books
               </h2>
               <ul className="mt-3 space-y-2">
                 {connections.map(({ from, to, note }) => (
-                  <li key={`${note.id}-${to.id}`} className="text-sm text-slate-300">
-                    <Link to={`/books/${from.id}`} className="text-indigo-300 hover:text-indigo-200">
+                  <li key={`${note.id}-${to.id}`} className="text-sm text-ink-muted">
+                    <Link to={`/books/${from.id}`} className="link font-serif">
                       {from.title}
                     </Link>{" "}
-                    <span className="text-slate-500">↔</span>{" "}
-                    <Link to={`/books/${to.id}`} className="text-indigo-300 hover:text-indigo-200">
+                    <ArrowsRightLeftIcon aria-hidden="true" className="inline size-3.5 align-[-2px] text-ink-subtle" />
+                    <span className="sr-only">linked with</span>{" "}
+                    <Link to={`/books/${to.id}`} className="link font-serif">
                       {to.title}
                     </Link>
-                    <span className="text-slate-500"> via “{note.title}”</span>
+                    <span className="text-ink-subtle"> via “{note.title}”</span>
                   </li>
                 ))}
               </ul>

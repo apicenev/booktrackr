@@ -9,9 +9,9 @@ const AppLayout = () => {
 
   return (
     <LibraryProvider key={user!.uid} uid={user!.uid}>
-      <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="min-h-screen bg-canvas text-ink">
         <Navbar />
-        <main className="max-w-5xl mx-auto py-6 px-4">
+        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
           <Outlet />
         </main>
       </div>

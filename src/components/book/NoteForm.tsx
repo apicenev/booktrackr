@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { XMarkIcon } from "@heroicons/react/16/solid";
 import type { Book } from "../../types/Book";
 
 export interface NoteValues {
@@ -8,9 +9,6 @@ export interface NoteValues {
   isKeyInsight: boolean;
   linkedBookIds: string[];
 }
-
-const inputClass =
-  "mt-1 w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40";
 
 /** Comma-separated input -> unique, lower-case tags. */
 const parseTags = (input: string): string[] => [
@@ -87,40 +85,40 @@ export default function NoteForm({
   };
 
   return (
-    <form onSubmit={submit} className="grid grid-cols-1 gap-3">
-      <label className="block text-xs font-medium text-slate-400">
+    <form onSubmit={submit} className="grid grid-cols-1 gap-4">
+      <label className="field">
         Heading
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={200}
-          className={inputClass}
+          className="input"
           placeholder="Key Ideas / Chapter title / Concept"
         />
       </label>
 
-      <label className="block text-xs font-medium text-slate-400">
+      <label className="field">
         Summary
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className={`${inputClass} min-h-[110px]`}
+          className="textarea"
           placeholder="Write the idea in your own words. Add examples, pitfalls, patterns…"
         />
       </label>
 
-      <label className="block text-xs font-medium text-slate-400">
+      <label className="field">
         Tags (optional, comma-separated)
         <input
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          className={inputClass}
+          className="input"
           placeholder="clean-architecture, testing, habits"
         />
       </label>
 
       {otherBooks.length > 0 && (
-        <div className="text-xs font-medium text-slate-400">
+        <div className="field">
           <label className="block">
             Related books (optional)
             <select
@@ -129,7 +127,7 @@ export default function NoteForm({
                 const id = e.target.value;
                 if (id) setLinkedBookIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
               }}
-              className={inputClass}
+              className="select"
             >
               <option value="">Link a book this idea connects to…</option>
               {otherBooks
@@ -146,16 +144,16 @@ export default function NoteForm({
               {linkedBooks.map((b) => (
                 <li
                   key={b.id}
-                  className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 py-0.5 pl-2.5 pr-1 text-[11px] text-indigo-200 ring-1 ring-indigo-400/30"
+                  className="inline-flex items-center gap-0.5 rounded-badge bg-brand-soft py-0.5 pr-0.5 pl-2 text-xs font-medium text-brand-ink"
                 >
                   {b.title}
                   <button
                     type="button"
                     onClick={() => setLinkedBookIds((ids) => ids.filter((id) => id !== b.id))}
                     aria-label={`Remove link to ${b.title}`}
-                    className="grid h-4 w-4 place-items-center rounded-full hover:bg-indigo-400/20"
+                    className="-my-1 grid size-6 cursor-pointer place-items-center rounded hover:bg-brand/15"
                   >
-                    ×
+                    <XMarkIcon aria-hidden="true" className="size-3.5" />
                   </button>
                 </li>
               ))}
@@ -164,18 +162,18 @@ export default function NoteForm({
         </div>
       )}
 
-      <label className="flex items-center gap-2 text-sm text-slate-300">
+      <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink">
         <input
           type="checkbox"
           checked={isKeyInsight}
           onChange={(e) => setIsKeyInsight(e.target.checked)}
-          className="h-4 w-4 accent-amber-400"
+          className="size-4 shrink-0 cursor-pointer accent-warning"
         />
         Key insight — show it prominently in the knowledge library
       </label>
 
       {error && (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-danger-ink">
           {error}
         </p>
       )}
@@ -185,7 +183,7 @@ export default function NoteForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
+            className="btn btn-ghost"
           >
             Cancel
           </button>
@@ -193,7 +191,7 @@ export default function NoteForm({
         <button
           type="submit"
           disabled={saving || !title.trim() || !content.trim()}
-          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn btn-primary"
         >
           {saving ? pendingLabel : submitLabel}
         </button>

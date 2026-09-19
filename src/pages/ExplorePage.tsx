@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { BookmarkIcon, CheckIcon, MagnifyingGlassIcon } from "@heroicons/react/16/solid";
 import {
   getCachedSearch,
   getCachedTrending,
@@ -12,6 +13,9 @@ import { useAuth } from "../lib/auth/useAuth";
 import { useLibrary } from "../lib/library/useLibrary";
 import type { Book, BookStatus } from "../types/Book";
 import BookCover from "../components/book/BookCover";
+import { Spinner } from "../components/ui/LoadingState";
+import EmptyState from "../components/ui/EmptyState";
+import { MagnifyingGlassIcon as MagnifyingGlassOutlineIcon } from "@heroicons/react/24/outline";
 import { writeErrorMessage } from "../lib/firestoreUtils";
 
 type AddState = "adding" | { error: string };
@@ -25,11 +29,11 @@ const authorLabel = (book: ExploreBook) => book.authors.join(", ") || "Unknown";
 
 function SkeletonCard() {
   return (
-    <li aria-hidden="true" className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-      <div className="h-24 w-16 shrink-0 animate-pulse rounded-xl bg-slate-800" />
+    <li aria-hidden="true" className="card flex gap-4 p-4">
+      <div className="skeleton aspect-[2/3] w-20 shrink-0" />
       <div className="flex-1 space-y-2 pt-1">
-        <div className="h-4 w-3/4 animate-pulse rounded bg-slate-800" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-slate-800" />
+        <div className="skeleton h-4 w-3/4" />
+        <div className="skeleton h-3 w-1/2" />
       </div>
     </li>
   );
@@ -159,52 +163,59 @@ const ExplorePage = () => {
   const showSkeleton = loading && results.length === 0;
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 px-6 py-5 shadow-lg shadow-black/20 backdrop-blur">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-100">Explore Books</h1>
-        <p className="mt-1 text-sm text-slate-400">
+    <div className="space-y-8">
+      <div>
+        <h1 className="page-title">Explore Books</h1>
+        <p className="page-lead">
           Find books on Open Library, then add them to your library or save them to your wishlist.
           Cover and page count are filled in automatically.
         </p>
       </div>
 
       <form onSubmit={handleSearch} role="search" className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+        <MagnifyingGlassIcon
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-ink-subtle"
+        />
         <input
           type="search"
           placeholder="Search by title, author or ISBN…"
           aria-label="Search Open Library"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+          className="h-11 w-full rounded-control border border-control bg-surface pr-4 pl-11 text-base text-ink shadow-card transition placeholder:text-ink-subtle focus:border-brand focus:ring-3 focus:ring-brand/15 focus:outline-none"
         />
+        </div>
         <button
           type="submit"
-          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm text-white transition hover:bg-indigo-500"
+          className="btn btn-primary h-11 px-5"
         >
           Search
         </button>
       </form>
 
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-lg font-semibold text-slate-100">{heading}</h2>
+        <h2 className="section-title text-lg">{heading}</h2>
         {loading && (
-          <p className="text-sm text-slate-400 animate-pulse" aria-live="polite">
+          <p className="flex items-center gap-2 text-sm text-ink-subtle" aria-live="polite">
+            <Spinner />
             {results.length ? "Updating…" : "Asking Open Library… this can take a few seconds"}
           </p>
         )}
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="alert-error">
           {error}
         </p>
       )}
 
       {!loading && !error && results.length === 0 && (
-        <p className="text-sm text-slate-400">No books found. Try a different search.</p>
+        <EmptyState icon={MagnifyingGlassOutlineIcon} compact>No books found. Try a different search.</EmptyState>
       )}
 
-      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {showSkeleton && Array.from({ length: 6 }, (_, i) => <SkeletonCard key={i} />)}
         {results.map((book) => {
           const existing = libraryMatch(book);
@@ -213,15 +224,15 @@ const ExplorePage = () => {
           return (
             <li
               key={book.key}
-              className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/50 p-4 shadow-lg shadow-black/20 backdrop-blur"
+              className="card card-interactive flex flex-col p-4"
             >
               <div className="flex gap-4">
-                <BookCover title={book.title} coverId={book.coverId} />
+                <BookCover title={book.title} author={authorLabel(book)} coverId={book.coverId} size="md" />
 
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-semibold text-slate-100">{book.title}</h3>
-                  <p className="mt-0.5 truncate text-sm text-slate-400">{authorLabel(book)}</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <h3 className="book-title line-clamp-3 text-base">{book.title}</h3>
+                  <p className="mt-0.5 truncate text-sm text-ink-muted">{authorLabel(book)}</p>
+                  <p className="mt-2 text-xs text-ink-subtle">
                     {[book.firstPublishYear, book.pages && `${book.pages} pages`]
                       .filter(Boolean)
                       .join(" · ")}
@@ -229,20 +240,21 @@ const ExplorePage = () => {
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-2">
+              <div className="mt-auto flex gap-2 pt-4">
                 {existing?.status === "wishlist" ? (
                   <>
                     <Link
                       to={`/books/${existing.id}`}
-                      className="flex-1 rounded-lg bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-200 ring-1 ring-amber-400/30"
+                      className="btn btn-sm flex-1 bg-warning-soft text-warning-ink hover:brightness-95"
                     >
-                      ★ On your wishlist
+                      <BookmarkIcon aria-hidden="true" className="size-4" />
+                      On your wishlist
                     </Link>
                     <button
                       type="button"
                       disabled={busy}
                       onClick={() => moveToLibrary(existing, book.key)}
-                      className="rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white transition hover:bg-indigo-500 disabled:opacity-60"
+                      className="btn btn-sm btn-primary"
                     >
                       Move to library
                     </button>
@@ -250,9 +262,10 @@ const ExplorePage = () => {
                 ) : existing ? (
                   <Link
                     to={`/books/${existing.id}`}
-                    className="flex-1 rounded-lg bg-emerald-500/10 px-3 py-2 text-center text-sm text-emerald-200 ring-1 ring-emerald-400/30"
+                    className="btn btn-sm flex-1 bg-success-soft text-success-ink hover:brightness-95"
                   >
-                    ✓ In your library
+                    <CheckIcon aria-hidden="true" className="size-4" />
+                    In your library
                   </Link>
                 ) : (
                   <>
@@ -260,7 +273,7 @@ const ExplorePage = () => {
                       type="button"
                       onClick={() => add(book, "to-read")}
                       disabled={busy}
-                      className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white transition hover:bg-indigo-500 disabled:opacity-60"
+                      className="btn btn-sm btn-primary flex-1"
                     >
                       {busy ? "Adding…" : "Add to library"}
                     </button>
@@ -268,7 +281,7 @@ const ExplorePage = () => {
                       type="button"
                       onClick={() => add(book, "wishlist")}
                       disabled={busy}
-                      className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-200 ring-1 ring-slate-700 transition hover:bg-slate-700 disabled:opacity-60"
+                      className="btn btn-sm btn-secondary"
                     >
                       Want to read
                     </button>
@@ -276,7 +289,7 @@ const ExplorePage = () => {
                 )}
               </div>
               {typeof state === "object" && (
-                <p role="alert" className="mt-2 text-xs text-red-400">
+                <p role="alert" className="mt-2 text-xs text-danger-ink">
                   {state.error}
                 </p>
               )}

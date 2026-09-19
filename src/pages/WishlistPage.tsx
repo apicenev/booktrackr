@@ -1,10 +1,14 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { PlusIcon } from "@heroicons/react/16/solid";
 import { useAuth } from "../lib/auth/useAuth";
 import { useLibrary } from "../lib/library/useLibrary";
 import { deleteBook, updateBook } from "../services/bookService";
 import type { Book } from "../types/Book";
 import BookCover from "../components/book/BookCover";
+import LoadingState from "../components/ui/LoadingState";
+import EmptyState from "../components/ui/EmptyState";
+import { BookmarkIcon } from "@heroicons/react/24/outline";
 
 const WishlistPage = () => {
   const { user } = useAuth();
@@ -44,66 +48,65 @@ const WishlistPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/50 px-6 py-5 shadow-lg shadow-black/20 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-100">Wishlist</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="page-title">Wishlist</h1>
+          <p className="page-lead">
             Books you're interested in but haven't committed to yet. Move one to your library when
             you get it.
           </p>
         </div>
         <Link
           to="/explore"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500"
+          className="btn btn-primary self-start sm:self-auto"
         >
-          <span aria-hidden="true">+</span> Find books
+          <PlusIcon aria-hidden="true" className="size-4" />
+          Find books
         </Link>
       </div>
 
       {actionError && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="alert-error">
           {actionError}
         </p>
       )}
 
       {error ? (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="alert-error">
           {error}
         </p>
       ) : !booksLoaded ? (
-        <p className="text-sm text-slate-400 animate-pulse">Loading your wishlist…</p>
+        <LoadingState label="Loading your wishlist…" />
       ) : wishlist.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center">
-          <p className="text-sm text-slate-400">
-            Your wishlist is empty. Use “Want to read” on Explore to save books for later.
-          </p>
-        </div>
+        <EmptyState icon={BookmarkIcon}>
+          Your wishlist is empty. Use “Want to read” on Explore to save books for later.
+        </EmptyState>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {wishlist.map((book) => (
             <li
               key={book.id}
-              className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/50 p-4 shadow-lg shadow-black/20"
+              className="card card-interactive flex flex-col p-4"
             >
               <Link to={`/books/${book.id}`} className="group flex gap-4">
-                <BookCover title={book.title} coverId={book.coverId} />
+                <BookCover title={book.title} author={book.author} coverId={book.coverId} size="md" />
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-slate-100 group-hover:text-indigo-200">{book.title}</h3>
-                  <p className="mt-0.5 truncate text-sm text-slate-400">{book.author}</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <h3 className="book-title line-clamp-2 text-base group-hover:text-brand-ink">{book.title}</h3>
+                  <p className="mt-0.5 truncate text-sm text-ink-muted">{book.author}</p>
+                  <p className="mt-2 text-xs text-ink-subtle">
                     {[book.totalPages && `${book.totalPages} pages`, `added ${book.createdAt.toLocaleDateString()}`]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
                 </div>
               </Link>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-auto flex gap-2 pt-4">
                 <button
                   type="button"
                   disabled={busyId === book.id}
                   onClick={() => moveToLibrary(book)}
-                  className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white transition hover:bg-indigo-500 disabled:opacity-60"
+                  className="btn btn-sm btn-primary flex-1"
                 >
                   Move to library
                 </button>
@@ -112,7 +115,7 @@ const WishlistPage = () => {
                   disabled={busyId === book.id}
                   onClick={() => remove(book)}
                   aria-label={`Remove ${book.title} from wishlist`}
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:bg-red-600 hover:text-white disabled:opacity-60"
+                  className="btn btn-sm btn-ghost hover:bg-danger-soft hover:text-danger-ink"
                 >
                   Remove
                 </button>

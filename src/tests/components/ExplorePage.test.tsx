@@ -68,7 +68,7 @@ describe("ExplorePage — Want to read", () => {
     ];
     renderPage();
 
-    expect(screen.getByRole("link", { name: "★ On your wishlist" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "On your wishlist" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Move to library" })).toBeInTheDocument();
   });
 

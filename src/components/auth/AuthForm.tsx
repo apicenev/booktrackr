@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { authErrorMessage } from "../../lib/auth/authErrors";
+import BrandMark from "../layout/BrandMark";
 
 interface AuthFormProps {
   title: string;
@@ -10,9 +11,6 @@ interface AuthFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
   footer: { prompt: string; linkLabel: string; to: string };
 }
-
-const inputClass =
-  "mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40";
 
 export default function AuthForm({
   title,
@@ -41,35 +39,35 @@ export default function AuthForm({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 text-slate-100">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg"
-      >
-        <div>
-          <p className="text-sm font-medium text-indigo-300">BookTrackr</p>
-          <h1 className="mt-1 text-2xl font-semibold">{title}</h1>
-        </div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-4 py-12">
+      <div className="mb-8 flex flex-col items-center gap-3 text-center">
+        <BrandMark size="lg" />
+        <p className="font-serif text-xl font-semibold tracking-tight text-ink">BookTrackr</p>
+        <p className="text-sm text-ink-muted">Track your reading. Keep what you learn.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="card w-full max-w-sm space-y-5 p-6 sm:p-8">
+        <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          <p role="alert" className="alert-error">
             {error}
           </p>
         )}
 
-        <label className="block text-sm font-medium text-slate-300">
+        <label className="field">
           Email
           <input
             type="email"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
+            className="input"
             required
           />
         </label>
 
-        <label className="block text-sm font-medium text-slate-300">
+        <label className="field">
           Password
           <input
             type="password"
@@ -77,26 +75,22 @@ export default function AuthForm({
             minLength={passwordAutoComplete === "new-password" ? 6 : undefined}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
+            className="input"
             required
           />
         </label>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-xl bg-indigo-600 p-2 font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <button type="submit" disabled={submitting} className="btn btn-primary h-10 w-full">
           {submitting ? pendingLabel : submitLabel}
         </button>
-
-        <p className="text-sm text-slate-400">
-          {footer.prompt}{" "}
-          <Link to={footer.to} className="text-indigo-400 hover:text-indigo-300">
-            {footer.linkLabel}
-          </Link>
-        </p>
       </form>
+
+      <p className="mt-6 text-sm text-ink-muted">
+        {footer.prompt}{" "}
+        <Link to={footer.to} className="link">
+          {footer.linkLabel}
+        </Link>
+      </p>
     </div>
   );
 }

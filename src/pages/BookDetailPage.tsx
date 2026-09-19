@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeftIcon, ChevronRightIcon } from "@heroicons/react/16/solid";
 import { useAuth } from "../lib/auth/useAuth";
 import { useLibrary } from "../lib/library/useLibrary";
 import type { Book } from "../types/Book";
@@ -16,9 +17,9 @@ import NotesList from "../components/book/NotesList";
 import NewNoteForm from "../components/book/NewNoteForm";
 import ActionItemsList from "../components/book/ActionItemsList";
 import NewActionItemForm from "../components/book/NewActionItemForm";
+import LoadingState from "../components/ui/LoadingState";
 
-const panelClass =
-  "rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-lg shadow-black/20 backdrop-blur";
+const panelClass = "panel";
 
 export default function BookDetailPage() {
   const { id: bookId } = useParams();
@@ -73,7 +74,7 @@ export default function BookDetailPage() {
   if (error) {
     return (
       <div className={panelClass}>
-        <p role="alert" className="text-sm text-red-400">{error}</p>
+        <p role="alert" className="msg-error">{error}</p>
       </div>
     );
   }
@@ -81,9 +82,7 @@ export default function BookDetailPage() {
   if (!booksLoaded || deleting) {
     return (
       <div className={panelClass}>
-        <p className="text-sm text-slate-400 animate-pulse">
-          {deleting ? "Deleting book…" : "Loading book…"}
-        </p>
+        <LoadingState label={deleting ? "Deleting book…" : "Loading book…"} />
       </div>
     );
   }
@@ -91,10 +90,10 @@ export default function BookDetailPage() {
   if (!book) {
     return (
       <div className={panelClass}>
-        <p className="text-sm text-red-400">Book not found.</p>
+        <p className="text-sm text-ink-muted">Book not found.</p>
         <Link
           to="/library"
-          className="mt-4 inline-block rounded-xl bg-slate-900/60 px-4 py-2 text-sm text-slate-200 ring-1 ring-slate-800/80 transition hover:bg-slate-800/60"
+          className="btn btn-secondary mt-4"
         >
           Back to Library
         </Link>
@@ -105,12 +104,13 @@ export default function BookDetailPage() {
   const onWishlist = book.status === "wishlist";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         to={onWishlist ? "/wishlist" : "/library"}
-        className="text-sm text-slate-400 hover:text-slate-200"
+        className="inline-flex items-center gap-1 text-sm font-medium text-ink-muted hover:text-ink"
       >
-        ← {onWishlist ? "Wishlist" : "Library"}
+        <ArrowLeftIcon aria-hidden="true" className="size-4" />
+        {onWishlist ? "Wishlist" : "Library"}
       </Link>
 
       <BookHeader
@@ -121,14 +121,14 @@ export default function BookDetailPage() {
       />
 
       {onWishlist && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/30 bg-amber-500/5 px-5 py-4">
-          <p className="text-sm text-amber-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-warning/30 bg-warning-soft px-5 py-4">
+          <p className="text-sm text-warning-ink">
             This book is on your wishlist. Move it to your library once you've got it.
           </p>
           <button
             type="button"
             onClick={moveToLibrary}
-            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+            className="btn btn-primary"
           >
             Move to library
           </button>
@@ -136,7 +136,7 @@ export default function BookDetailPage() {
       )}
 
       {actionError && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="alert-error">
           {actionError}
         </p>
       )}
@@ -145,13 +145,14 @@ export default function BookDetailPage() {
         {/* Progress first on mobile: it is the most frequent interaction. */}
         <div className="space-y-6 lg:order-2">
           <section className={panelClass}>
-            <h2 className="text-lg font-semibold text-slate-100">Progress</h2>
-            <p className="mt-1 mb-4 text-sm text-slate-400">Log what you read — it feeds your stats.</p>
+            <h2 className="section-title text-lg">Progress</h2>
+            <p className="section-lead mb-5">Log what you read — it feeds your stats.</p>
 
             <QuickLog book={book} />
 
-            <details className="mt-4 rounded-xl border border-slate-800 p-3">
-              <summary className="cursor-pointer text-sm text-slate-300 select-none">
+            <details className="well group mt-5 px-4 py-3">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 font-medium select-none hover:text-ink [&::-webkit-details-marker]:hidden text-sm text-ink-muted">
+                <ChevronRightIcon aria-hidden="true" className="size-4 transition-transform group-open:rotate-90" />
                 Edit status &amp; page count
               </summary>
               <div className="mt-4">
@@ -169,8 +170,8 @@ export default function BookDetailPage() {
           </section>
 
           <section className={panelClass}>
-            <h2 className="text-lg font-semibold text-slate-100">Action items</h2>
-            <p className="mt-1 text-sm text-slate-400">
+            <h2 className="section-title text-lg">Action items</h2>
+            <p className="section-lead">
               Turn ideas into tasks you actually apply.
             </p>
 
@@ -186,8 +187,8 @@ export default function BookDetailPage() {
 
         <div className="space-y-6 lg:order-1 lg:col-span-2">
           <section className={panelClass}>
-            <h2 className="text-lg font-semibold text-slate-100">Notes &amp; Sections</h2>
-            <p className="mt-1 text-sm text-slate-400">
+            <h2 className="section-title text-lg">Notes &amp; Sections</h2>
+            <p className="section-lead">
               Structure your summary as sections, mark key insights and link related books.
             </p>
 
@@ -202,14 +203,14 @@ export default function BookDetailPage() {
 
           {backlinks.length > 0 && (
             <section className={panelClass}>
-              <h2 className="text-lg font-semibold text-slate-100">Referenced from other books</h2>
+              <h2 className="section-title text-lg">Referenced from other books</h2>
               <ul className="mt-3 space-y-2">
                 {backlinks.map(({ from, note }) => (
                   <li key={note.id} className="text-sm">
-                    <Link to={`/books/${from.id}`} className="font-medium text-indigo-300 hover:text-indigo-200">
+                    <Link to={`/books/${from.id}`} className="link font-serif">
                       {from.title}
                     </Link>
-                    <span className="text-slate-400"> — {note.title}</span>
+                    <span className="text-ink-muted"> — {note.title}</span>
                   </li>
                 ))}
               </ul>

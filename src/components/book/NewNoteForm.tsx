@@ -13,9 +13,9 @@ export default function NewNoteForm({ bookId }: { bookId: string }) {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
-      <h3 className="text-sm font-semibold text-slate-100">New section</h3>
-      <p className="mt-0.5 mb-4 text-xs text-slate-500">
+    <div className="well p-4">
+      <h3 className="text-sm font-semibold text-ink">New section</h3>
+      <p className="mt-0.5 mb-4 text-xs text-ink-subtle">
         Use a heading from the book (e.g. “Chapter 3 — Dependency Inversion”).
       </p>
       <NoteForm

@@ -3,9 +3,6 @@ import type { Book, BookStatus } from "../../types/Book";
 import { BOOK_STATUSES, applyProgressUpdate, progressPercent } from "../../domain/book";
 import ProgressBar from "./ProgressBar";
 
-const inputClass =
-  "mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40";
-
 const parsePages = (value: string) => (value.trim() === "" ? undefined : Number(value));
 
 /**
@@ -52,20 +49,20 @@ export default function ProgressEditor({
   return (
     <div className="space-y-4">
       <div>
-        <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+        <div className="mb-1.5 flex items-center justify-between text-xs text-ink-subtle">
           <span>Progress</span>
-          <span>{preview === null ? "Add total pages" : `${preview}%`}</span>
+          <span className="tabular-nums">{preview === null ? "Add total pages" : `${preview}%`}</span>
         </div>
         <ProgressBar percent={preview ?? 0} label="Reading progress" />
       </div>
 
-      <div className="grid grid-cols-1 gap-3">
-        <label className="block text-xs font-medium text-slate-400">
+      <div className="grid grid-cols-1 gap-4">
+        <label className="field">
           Status
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as BookStatus)}
-            className={inputClass}
+            className="select"
           >
             {BOOK_STATUSES.map((s) => (
               <option key={s.value} value={s.value}>
@@ -76,7 +73,7 @@ export default function ProgressEditor({
         </label>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-xs font-medium text-slate-400">
+          <label className="field">
             Pages read
             <input
               type="number"
@@ -84,12 +81,12 @@ export default function ProgressEditor({
               min={0}
               value={pagesRead}
               onChange={(e) => setPagesRead(e.target.value)}
-              className={inputClass}
+              className="input tabular-nums"
               placeholder="40"
             />
           </label>
 
-          <label className="block text-xs font-medium text-slate-400">
+          <label className="field">
             Total pages
             <input
               type="number"
@@ -97,7 +94,7 @@ export default function ProgressEditor({
               min={1}
               value={totalPages}
               onChange={(e) => setTotalPages(e.target.value)}
-              className={inputClass}
+              className="input tabular-nums"
               placeholder="320"
             />
           </label>
@@ -105,17 +102,12 @@ export default function ProgressEditor({
       </div>
 
       {error && (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="msg-error">
           {error}
         </p>
       )}
 
-      <button
-        type="button"
-        disabled={saving}
-        onClick={save}
-        className="w-full rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-      >
+      <button type="button" disabled={saving} onClick={save} className="btn btn-primary w-full">
         {saving ? "Saving…" : "Save progress"}
       </button>
     </div>

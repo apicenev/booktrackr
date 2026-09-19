@@ -1,6 +1,7 @@
 import AppRouter from "./router/AppRouter";
 import { BrowserRouter } from "react-router-dom";
 import { useAuth } from "./lib/auth/useAuth";
+import BrandMark from "./components/layout/BrandMark";
 
 function App() {
   const { initializing } = useAuth();
@@ -8,8 +9,9 @@ function App() {
   // While Firebase checks login status
   if (initializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
-        <p className="text-slate-400 animate-pulse">Loading BookTrackr...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas">
+        <BrandMark size="lg" />
+        <p className="animate-pulse text-sm text-ink-muted">Loading BookTrackr...</p>
       </div>
     );
   }

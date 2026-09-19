@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CheckCircleIcon } from "@heroicons/react/16/solid";
 import { useAuth } from "../../lib/auth/useAuth";
 import { resetStatistics } from "../../services/statsService";
 import { writeErrorMessage } from "../../lib/firestoreUtils";
@@ -48,14 +49,14 @@ export default function ResetStatsPanel({
   return (
     <section
       aria-labelledby="reset-heading"
-      className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5"
+      className="rounded-card border border-danger/25 bg-surface p-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="reset-heading" className="text-sm font-semibold text-slate-100">
+          <h2 id="reset-heading" className="text-sm font-semibold text-ink">
             Reset statistics
           </h2>
-          <p className="mt-1 text-xs text-slate-400">Start your stats from a clean slate.</p>
+          <p className="mt-1 text-sm text-ink-muted">Start your stats from a clean slate.</p>
         </div>
         {!open && (
           <button
@@ -64,7 +65,7 @@ export default function ResetStatsPanel({
               setDone(false);
               setOpen(true);
             }}
-            className="rounded-xl bg-red-600/15 px-4 py-2 text-sm text-red-200 ring-1 ring-red-500/30 transition hover:bg-red-600/25"
+            className="btn btn-danger-ghost border border-danger/30"
           >
             Reset statistics…
           </button>
@@ -72,33 +73,34 @@ export default function ResetStatsPanel({
       </div>
 
       {done && !open && (
-        <p role="status" className="mt-3 text-sm text-emerald-300">
+        <p role="status" className="msg-success mt-3 flex items-center gap-1.5">
+          <CheckCircleIcon aria-hidden="true" className="size-4 shrink-0" />
           Statistics reset. Everything you log from now on starts fresh.
         </p>
       )}
 
       {open && (
         <div className="mt-4 space-y-3 text-sm">
-          <p className="text-slate-300">This permanently deletes:</p>
-          <ul className="list-disc space-y-1 pl-5 text-slate-300">
+          <p className="text-ink">This permanently deletes:</p>
+          <ul className="list-disc space-y-1 pl-5 text-ink-muted marker:text-danger">
             <li>your whole reading history (pages per month, streaks, pace)</li>
             <li>the start and finish dates of all books (books finished per year)</li>
             <li>all yearly reading goals</li>
           </ul>
-          <p className="text-slate-400">
+          <p className="text-ink-muted">
             Your books, their status and page progress, notes and action items are kept.
           </p>
-          <label className="block text-xs font-medium text-slate-400">
-            Type <span className="font-mono text-slate-200">{CONFIRM_WORD}</span> to confirm
+          <label className="field">
+            Type <span className="font-mono text-danger-ink">{CONFIRM_WORD}</span> to confirm
             <input
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               autoComplete="off"
-              className="mt-1 block w-40 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+              className="mt-1.5 block h-10 w-40 rounded-control border border-control bg-surface px-3 font-mono text-sm text-ink transition focus:border-danger focus:ring-3 focus:ring-danger/15 focus:outline-none"
             />
           </label>
           {error && (
-            <p role="alert" className="text-xs text-red-400">
+            <p role="alert" className="text-xs text-danger-ink">
               {error}
             </p>
           )}
@@ -107,7 +109,7 @@ export default function ResetStatsPanel({
               type="button"
               onClick={reset}
               disabled={confirmText !== CONFIRM_WORD || resetting}
-              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="btn btn-danger"
             >
               {resetting ? "Resetting…" : "Permanently reset"}
             </button>
@@ -115,7 +117,7 @@ export default function ResetStatsPanel({
               type="button"
               onClick={close}
               disabled={resetting}
-              className="rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
+              className="btn btn-ghost"
             >
               Cancel
             </button>
