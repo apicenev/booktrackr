@@ -89,6 +89,15 @@ describe("applyProgressUpdate", () => {
     expect(patch.finishedAt).toBe(EARLIER);
   });
 
+  it("does not invent a finish date when re-saving a finished book without one", () => {
+    const patch = applyProgressUpdate(
+      { status: "finished", startedAt: EARLIER },
+      { status: "finished", totalPages: 320 },
+      NOW
+    );
+    expect(patch.finishedAt).toBeUndefined();
+  });
+
   it("clears finishedAt when a finished book is reopened", () => {
     const patch = applyProgressUpdate(
       { status: "finished", startedAt: EARLIER, finishedAt: EARLIER },

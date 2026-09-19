@@ -63,8 +63,11 @@ export function applyProgressUpdate(
 
   const startedAt =
     book.startedAt ?? (status === "reading" || status === "finished" ? now : undefined);
+  // Only the transition to "finished" records a date. Re-saving an already
+  // finished book keeps its date, or keeps having none (e.g. after a stats reset),
+  // so it doesn't suddenly count as finished today.
   const finishedAt =
-    status === "finished" ? (book.status === "finished" ? book.finishedAt ?? now : now) : undefined;
+    status === "finished" ? (book.status === "finished" ? book.finishedAt : now) : undefined;
 
   return { status, totalPages, pagesRead, startedAt, finishedAt };
 }

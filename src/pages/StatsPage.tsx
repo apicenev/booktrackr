@@ -17,6 +17,7 @@ import {
 } from "../domain/stats";
 import MonthlyColumnChart from "../components/stats/MonthlyColumnChart";
 import ProgressBar from "../components/book/ProgressBar";
+import ResetStatsPanel from "../components/stats/ResetStatsPanel";
 
 const panelClass = "rounded-2xl border border-slate-800 bg-slate-900/50 p-5";
 
@@ -302,6 +303,9 @@ export default function StatsPage() {
           introduced isn't included.
         </p>
       </section>
+
+      {/* Past years may no longer have data after a reset. */}
+      <ResetStatsPanel books={books} onReset={() => setYear(today.getFullYear())} />
     </div>
   );
 }

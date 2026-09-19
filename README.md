@@ -16,7 +16,8 @@ usable knowledge through structured notes, key insights and action items.
 - **Knowledge library** (`/knowledge`): search and filter every note, key insight and action
   item across all books; the navbar search opens it. Shows connections between books.
 - **Stats** (`/stats`): yearly goal, books and pages per month, streaks, pace and
-  estimated finish dates.
+  estimated finish dates. "Reset statistics" (typed confirmation) deletes the reading
+  history, start/finish dates and goals; books, notes and action items are kept.
 
 **Stack:** React 19 · TypeScript · Vite 7 · Tailwind CSS 4 · React Router 7 · Firebase
 (Auth + Firestore, client SDK only, no custom backend) · Vitest + Testing Library.
